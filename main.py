@@ -494,7 +494,7 @@ class Api:
 if __name__ == "__main__":
     api = Api()
     window = webview.create_window(
-        title="Peak — Video Compressor",
+        title="Peak - Discord Video Compressor",
         url=resource_path("index.html"),
         js_api=api,
         width=900, height=720,
