@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Peak - Discord Video Compressor</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="Font/style.css" />
+  </head>
+  <body>
+    <div class="app">
+      <!-- Header -->
+      <div class="header">
+        <div class="header-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M15 10L19.5528 7.72361C20.2177 7.39116 21 7.87465 21 8.61803V15.382C21 16.1253 20.2177 16.6088 19.5528 16.2764L15 14M5 18H13C14.1046 18 15 17.1046 15 16V8C15 6.89543 14.1046 6 13 6H5C3.89543 6 3 6.89543 3 8V16C3 17.1046 3.89543 18 5 18Z"
+              stroke="white"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </div>
+        <div class="header-text">
+          <h1>Video Compressor</h1>
+          <p>Compress videos for Discord sharing</p>
+        </div>
+        <div class="header-actions">
+          <button
+            class="header-icon-btn"
+            onclick="openChangelog()"
+            title="Changelog"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+              <circle
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="2"
+              />
+              <path
+                d="M12 8v4M12 16h.01"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- FFmpeg warning -->
+      <div class="ffmpeg-warning" id="ffmpegWarning">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+          <path
+            d="M12 9V13M12 17H12.01M10.29 3.86L1.82 18a2 2 0 001.73 3h16.9a2 2 0 001.73-3L13.71 3.86a2 2 0 00-3.42 0z"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+        FFmpeg not found — install it and add to PATH, then restart.
+      </div>
+
+      <!-- Body — splits into panels in wide layout -->
+      <div class="app-body">
+        <!-- Left panel: drop zone + queue -->
+        <div class="panel-left">
+          <!-- Drop zone -->
+          <div class="drop-zone" id="dropZone" onclick="browseFiles()">
+            <div class="drop-zone-icon">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M21 15V19a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"
+                  stroke="#949ba4"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </div>
+            <div class="drop-zone-text">
+              <h3>Add videos</h3>
+              <p>
+                Drag and drop or <span>browse files</span> — multiple supported
+              </p>
+            </div>
+          </div>
+
+          <!-- Queue -->
+          <div class="queue-wrap" id="queueWrap">
+            <div class="queue-empty" id="queueEmpty">No files added yet</div>
+          </div>
+        </div>
+        <!-- /panel-left -->
+
+        <!-- Right panel: settings + compress + status -->
+        <div class="panel-right">
+          <!-- Settings -->
+          <div class="settings">
+            <div class="settings-header">
+              <span class="section-label">Settings</span>
+              <button class="reset-btn" onclick="resetSettings()">
+                ↺ Reset defaults
+              </button>
+            </div>
+
+            <div class="sliders">
+              <div class="slider-row">
+                <div class="slider-header">
+                  <span class="slider-label">Target Size</span>
+                  <span class="slider-value" id="sizeVal">10 MB</span>
+                </div>
+                <input
+                  type="range"
+                  class="styled"
+                  id="sizeSlider"
+                  min="1"
+                  max="200"
+                  value="10"
+                />
+              </div>
+              <div class="slider-row">
+                <div class="slider-header">
+                  <span class="slider-label">Audio Bitrate</span>
+                  <span class="slider-value" id="audioVal">128 kbps</span>
+                </div>
+                <input
+                  type="range"
+                  class="styled"
+                  id="audioSlider"
+                  min="8"
+                  max="320"
+                  value="128"
+                />
+              </div>
+            </div>
+
+            <div class="controls-row">
+              <!-- GPU — first child: tooltip anchored left to avoid clipping -->
+              <div
+                class="toggle-row has-tooltip"
+                onclick="toggleCb('gpuToggle')"
+              >
+                <span class="tooltip"
+                  >Use NVIDIA GPU encoding (NVENC).<br />Much faster, slightly
+                  lower quality.</span
+                >
+                <div class="toggle-info">
+                  <strong>GPU</strong><small>NVENC only</small>
+                </div>
+                <div class="toggle-switch">
+                  <input type="checkbox" id="gpuToggle" /><span
+                    class="toggle-track"
+                  ></span>
+                </div>
+              </div>
+
+              <div
+                class="toggle-row has-tooltip"
+                onclick="toggleCb('combineAudioToggle')"
+              >
+                <span class="tooltip"
+                  >Mix multiple audio tracks into one.<br />Turn off to keep all
+                  tracks separate.</span
+                >
+                <div class="toggle-info">
+                  <strong>Merge</strong><small>Multi-audio</small>
+                </div>
+                <div class="toggle-switch">
+                  <input type="checkbox" id="combineAudioToggle" checked /><span
+                    class="toggle-track"
+                  ></span>
+                </div>
+              </div>
+
+              <div
+                class="toggle-row has-tooltip"
+                onclick="toggleCb('twoPassToggle')"
+              >
+                <span class="tooltip"
+                  >Analyse video first, then encode.<br />More accurate file
+                  size, takes longer.</span
+                >
+                <div class="toggle-info">
+                  <strong>2-Pass</strong><small>Better size</small>
+                </div>
+                <div class="toggle-switch">
+                  <input type="checkbox" id="twoPassToggle" checked /><span
+                    class="toggle-track"
+                  ></span>
+                </div>
+              </div>
+
+              <!-- Format — last child: tooltip anchored right -->
+              <div class="format-wrap">
+                <span class="format-label">Format</span>
+                <button
+                  class="fmt-select-btn"
+                  id="fmtBtn"
+                  onclick="toggleFmtMenu(event)"
+                >
+                  <span id="fmtBtnLabel">MP4</span>
+                  <svg width="9" height="6" viewBox="0 0 9 6" fill="none">
+                    <path
+                      d="M1 1l3.5 3.5L8 1"
+                      stroke="#949ba4"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </button>
+                <div class="fmt-menu" id="fmtMenu">
+                  <div class="fmt-menu-header">Output Format</div>
+                  <div
+                    class="fmt-option"
+                    data-value="original"
+                    onclick="selectFmt(this)"
+                  >
+                    <div class="fmt-check">
+                      <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
+                        <path
+                          d="M1 3l2 2 4-4"
+                          stroke="white"
+                          stroke-width="1.5"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
+                      </svg>
+                    </div>
+                    Original<span class="fmt-desc">Keep source</span>
+                  </div>
+                  <div
+                    class="fmt-option selected"
+                    data-value="mp4"
+                    onclick="selectFmt(this)"
+                  >
+                    <div class="fmt-check">
+                      <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
+                        <path
+                          d="M1 3l2 2 4-4"
+                          stroke="white"
+                          stroke-width="1.5"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
+                      </svg>
+                    </div>
+                    MP4<span class="fmt-desc">H.264 · AAC</span>
+                  </div>
+                  <div
+                    class="fmt-option"
+                    data-value="mkv"
+                    onclick="selectFmt(this)"
+                  >
+                    <div class="fmt-check">
+                      <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
+                        <path
+                          d="M1 3l2 2 4-4"
+                          stroke="white"
+                          stroke-width="1.5"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
+                      </svg>
+                    </div>
+                    MKV<span class="fmt-desc">H.264 · AAC</span>
+                  </div>
+                  <div
+                    class="fmt-option"
+                    data-value="mov"
+                    onclick="selectFmt(this)"
+                  >
+                    <div class="fmt-check">
+                      <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
+                        <path
+                          d="M1 3l2 2 4-4"
+                          stroke="white"
+                          stroke-width="1.5"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
+                      </svg>
+                    </div>
+                    MOV<span class="fmt-desc">H.264 · AAC</span>
+                  </div>
+                  <div
+                    class="fmt-option"
+                    data-value="webm"
+                    onclick="selectFmt(this)"
+                  >
+                    <div class="fmt-check">
+                      <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
+                        <path
+                          d="M1 3l2 2 4-4"
+                          stroke="white"
+                          stroke-width="1.5"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
+                      </svg>
+                    </div>
+                    WebM<span class="fmt-desc">VP9 · Opus</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="output-dir-section">
+              <div
+                class="output-dir-toggle has-tooltip"
+                onclick="toggleOutputDir()"
+              >
+                <span class="tooltip"
+                  >Save output files to a fixed folder<br />instead of next to
+                  the source file.</span
+                >
+                <div class="toggle-info">
+                  <strong>Custom Output Folder</strong>
+                  <small id="outputDirSubtitle"
+                    >Off — saves next to source file</small
+                  >
+                </div>
+                <div
+                  class="toggle-switch"
+                  onclick="
+                    event.stopPropagation();
+                    toggleOutputDir();
+                  "
+                >
+                  <input type="checkbox" id="outputDirToggle" />
+                  <span class="toggle-track"></span>
+                </div>
+              </div>
+              <div class="output-dir-picker" id="outputDirPicker">
+                <div class="dir-path" id="dirPathLabel">No folder selected</div>
+                <button class="btn-sm" onclick="pickDirectory()">Browse</button>
+              </div>
+            </div>
+          </div>
+          <!-- /settings -->
+
+          <!-- Compress button -->
+          <button
+            class="compress-btn"
+            id="compressBtn"
+            onclick="startQueue()"
+            disabled
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M13 2L3 14H12L11 22L21 10H12L13 2Z"
+                stroke="white"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <span id="compressBtnLabel">Compress</span>
+          </button>
+
+          <!-- Status -->
+          <div class="status-bar">
+            <div class="progress-track" id="progressTrack">
+              <div class="progress-bar"></div>
+            </div>
+            <div class="status-text" id="statusText">
+              Add videos to get started
+            </div>
+          </div>
+        </div>
+        <!-- /panel-right -->
+      </div>
+      <!-- /app-body -->
+    </div>
+    <!-- /app -->
+
+    <!-- ═══════════════════════════════════════
+     TRIM MODAL
+     ═══════════════════════════════════════ -->
+    <div class="trim-overlay" id="trimOverlay">
+      <div class="trim-card">
+        <div class="trim-modal-header">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            style="flex-shrink: 0; color: var(--text-muted)"
+          >
+            <path
+              d="M6 9l6 6 6-6"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          <span class="trim-modal-title" id="trimModalTitle">Trim</span>
+          <button class="trim-modal-close" onclick="closeTrimModal()">✕</button>
+        </div>
+
+        <!-- Video -->
+        <div class="trim-video-wrap">
+          <video
+            id="trimVideo"
+            preload="metadata"
+            onclick="toggleTrimPlay()"
+          ></video>
+          <div class="trim-video-error" id="trimVideoError">
+            <span>Video preview unavailable</span>
+          </div>
+          <div class="trim-play-overlay" id="trimPlayOverlay">
+            <div class="trim-play-overlay-icon" id="trimPlayOverlayIcon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                <path d="M5 3l14 9-14 9V3z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Transport -->
+        <div class="trim-transport">
+          <button class="trim-ctrl-btn" onclick="skipVideo(-5)" title="−5s">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M11 17l-7-5 7-5v10zM18 17l-7-5 7-5v10z"
+                fill="currentColor"
+              />
+            </svg>
+          </button>
+          <button
+            class="trim-ctrl-btn primary"
+            id="trimPlayBtn"
+            onclick="toggleTrimPlay()"
+          >
+            <svg
+              id="trimPlayIcon"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="white"
+            >
+              <path d="M5 3l14 9-14 9V3z" />
+            </svg>
+          </button>
+          <button class="trim-ctrl-btn" onclick="skipVideo(5)" title="+5s">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M13 17l7-5-7-5v10zM6 17l7-5-7-5v10z"
+                fill="currentColor"
+              />
+            </svg>
+          </button>
+          <span class="trim-time" id="trimCurrentTime">0:00.000</span>
+          <span class="trim-time-sep">/</span>
+          <span class="trim-time" id="trimTotalTime">–:––</span>
+          <div class="trim-vol-wrap">
+            <svg
+              class="trim-vol-icon"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+            >
+              <path
+                d="M11 5L6 9H2v6h4l5 4V5zM19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <input
+              type="range"
+              class="trim-vol styled"
+              id="trimVol"
+              min="0"
+              max="1"
+              step="0.05"
+              value="1"
+            />
+          </div>
+        </div>
+
+        <!-- Timeline -->
+        <div class="trim-timeline-section">
+          <div class="tl-track" id="tlTrack">
+            <div class="tl-bar"></div>
+            <div class="tl-selection" id="tlSelection"></div>
+            <div class="tl-handle" id="tlHandleIn" data-handle="in"></div>
+            <div class="tl-handle" id="tlHandleOut" data-handle="out"></div>
+            <div class="tl-playhead" id="tlPlayhead"></div>
+          </div>
+          <div class="tl-labels">
+            <span id="tlLabelIn">0:00</span>
+            <span id="tlLabelOut">–:––</span>
+          </div>
+        </div>
+
+        <!-- Trim point inputs — 2-column grid: In on left, Out on right, each with inline Set button -->
+        <div class="trim-inputs-row">
+          <div class="trim-point">
+            <span class="trim-point-label">In</span>
+            <input
+              class="trim-point-input"
+              id="trimInInput"
+              placeholder="0:00.000"
+            />
+            <button
+              class="trim-set-btn"
+              onclick="setPointToCurrent('in')"
+              title="Set In to current position"
+            >
+              Set
+            </button>
+          </div>
+          <div class="trim-point">
+            <span class="trim-point-label">Out</span>
+            <input
+              class="trim-point-input"
+              id="trimOutInput"
+              placeholder="end"
+            />
+            <button
+              class="trim-set-btn"
+              onclick="setPointToCurrent('out')"
+              title="Set Out to current position"
+            >
+              Set
+            </button>
+          </div>
+        </div>
+
+        <!-- Audio tracks -->
+        <div class="trim-audio-section" id="trimAudioSection">
+          <div class="trim-audio-header">
+            Audio Tracks
+            <span class="trim-audio-note">· affects export only</span>
+          </div>
+          <div class="trim-track-list" id="trimTrackList"></div>
+        </div>
+
+        <!-- Footer -->
+        <div class="trim-modal-footer">
+          <button class="trim-btn-cancel" onclick="closeTrimModal()">
+            Cancel
+          </button>
+          <button class="trim-btn-apply" onclick="applyTrim()">Apply</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════
+     CHANGELOG MODAL
+     ═══════════════════════════════════════ -->
+    <div class="changelog-overlay" id="changelogOverlay">
+      <div class="changelog-card">
+        <div class="changelog-header">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            style="flex-shrink: 0; color: var(--brand)"
+          >
+            <path
+              d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 15v-4m0-4h.01"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+          </svg>
+          <h2>Changelog</h2>
+          <button class="changelog-close" onclick="closeChangelog()">✕</button>
+        </div>
+
+        <div class="changelog-body" id="changelogBody">
+          <!-- populated by buildChangelog() in app.js -->
+        </div>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
