@@ -16,13 +16,17 @@ if not errorlevel 1 (
   if defined PY goto :found
   for /f "delims=" %%p in ('py -3.11 -c "import sys; print(sys.executable)" 2^>nul') do set "PY=%%p"
   if defined PY goto :found
-  for /f "delims=" %%p in ('py -3 -c "import sys; v=sys.version_info; exit(0 if 8<=v.minor<=13 else 1)" 2^>nul && py -3 -c "import sys; print(sys.executable)"') do set "PY=%%p"
+)
+
+py -3 -c "import sys; v=sys.version_info; exit(0 if v.minor in range(8,14) else 1)" >nul 2>&1
+if not errorlevel 1 (
+  for /f "delims=" %%p in ('py -3 -c "import sys; print(sys.executable)"') do set "PY=%%p"
   if defined PY goto :found
 )
 
-where python >nul 2>&1
+python -c "import sys; v=sys.version_info; exit(0 if v.major==3 and v.minor in range(8,14) else 1)" >nul 2>&1
 if not errorlevel 1 (
-  for /f "delims=" %%p in ('python -c "import sys; v=sys.version_info; exit(0 if v.major==3 and 8<=v.minor<=13 else 1)" 2^>nul && python -c "import sys; print(sys.executable)"') do set "PY=%%p"
+  for /f "delims=" %%p in ('python -c "import sys; print(sys.executable)"') do set "PY=%%p"
   if defined PY goto :found
 )
 
@@ -61,7 +65,7 @@ if errorlevel 1 (
 :: ── Build exe ─────────────────────────────────────────────────────
 echo.
 echo Building .exe...
-"%PY%" -m PyInstaller --onefile --windowed --name "Peak" --add-data "index.html;." --add-data "style.css;." --add-data "app.js;." --add-data "changelog.js;." main.py
+"%PY%" -m PyInstaller --onefile --windowed --name "Peak - Discord Video Compressor" --add-data "index.html;." --add-data "style.css;." --add-data "app.js;." --add-data "changelog.js;." --add-data "css;css" --add-data "js;js" main.py
 if errorlevel 1 goto :fail
 
 echo.
