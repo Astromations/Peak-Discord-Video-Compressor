@@ -22,6 +22,7 @@ build.bat        ← One-click build to .exe (Windows)
    - Windows: extract → add the `bin/` folder to PATH → restart terminal
 
 2. **Install Python dependencies**
+
    ```
    pip install -r requirements.txt
    ```
@@ -50,3 +51,5 @@ Your `.exe` will appear in the `dist/` folder. Share `Peak.exe` with your friend
 - The output file is saved next to the original, with `_compressed` added to the name.
 - GPU encoding (NVENC) requires an NVIDIA GPU. Uncheck it if you don't have one.
 - Audio bitrate defaults to 128 kbps — good for most Discord sharing.
+
+lowk vibecoded icel
