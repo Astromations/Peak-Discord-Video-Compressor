@@ -348,6 +348,117 @@ function onItemDone(id, outputPath) {
   processNext();
 }
 
+function showRenameDialog(defaultStem, ext) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.className = "rename-overlay";
+    overlay.innerHTML = `
+      <div class="rename-card" role="dialog" aria-modal="true" aria-label="Rename output file">
+        <div class="rename-header">Rename output file</div>
+        <div class="rename-body">
+          <label class="rename-label" for="renameInput">New filename</label>
+          <div class="rename-input-wrap">
+            <input id="renameInput" class="rename-input" type="text" value="${esc(defaultStem)}" />
+            <span class="rename-ext">${esc(ext)}</span>
+          </div>
+          <div class="rename-error" id="renameError"></div>
+        </div>
+        <div class="rename-footer">
+          <button class="rename-btn cancel" id="renameCancelBtn">Cancel</button>
+          <button class="rename-btn apply" id="renameApplyBtn">Rename</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const card = overlay.querySelector(".rename-card");
+    const input = overlay.querySelector("#renameInput");
+    const err = overlay.querySelector("#renameError");
+    const cancelBtn = overlay.querySelector("#renameCancelBtn");
+    const applyBtn = overlay.querySelector("#renameApplyBtn");
+
+    function close(value) {
+      document.removeEventListener("keydown", onKeydown, true);
+      overlay.remove();
+      resolve(value);
+    }
+
+    function validateAndSubmit() {
+      const val = input.value.trim();
+      if (!val) {
+        err.textContent = "Filename cannot be empty.";
+        input.focus();
+        return;
+      }
+      if (/[<>:"/\\\\|?*]/.test(val)) {
+        err.textContent = "Filename contains invalid characters.";
+        input.focus();
+        return;
+      }
+      close(val);
+    }
+
+    function onKeydown(e) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        close(null);
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        validateAndSubmit();
+      }
+    }
+
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) close(null);
+    });
+    cancelBtn.addEventListener("click", () => close(null));
+    applyBtn.addEventListener("click", validateAndSubmit);
+    input.addEventListener("input", () => (err.textContent = ""));
+    document.addEventListener("keydown", onKeydown, true);
+
+    setTimeout(() => {
+      card.classList.add("open");
+      input.focus();
+      input.select();
+    }, 0);
+  });
+}
+
+function showRenameErrorDialog(message) {
+  const overlay = document.createElement("div");
+  overlay.className = "rename-overlay";
+  overlay.innerHTML = `
+    <div class="rename-card rename-error-card open" role="alertdialog" aria-modal="true" aria-label="Rename error">
+      <div class="rename-header">Rename failed</div>
+      <div class="rename-body">
+        <div class="rename-error show">${esc(message)}</div>
+      </div>
+      <div class="rename-footer">
+        <button class="rename-btn apply" id="renameErrorOkBtn">OK</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  function close() {
+    document.removeEventListener("keydown", onKeydown, true);
+    overlay.remove();
+  }
+
+  function onKeydown(e) {
+    if (e.key === "Escape" || e.key === "Enter") {
+      e.preventDefault();
+      close();
+    }
+  }
+
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) close();
+  });
+  overlay.querySelector("#renameErrorOkBtn")?.addEventListener("click", close);
+  document.addEventListener("keydown", onKeydown, true);
+}
+
 async function renameFile(id) {
   const oldPath = outputPaths[id];
   if (!oldPath) return;
@@ -357,22 +468,26 @@ async function renameFile(id) {
   const ext = dotIdx > 0 ? oldName.substring(dotIdx) : "";
   const stem = dotIdx > 0 ? oldName.substring(0, dotIdx) : oldName;
 
-  const newStem = prompt("Enter new filename:", stem);
-  if (!newStem || newStem.trim() === "" || newStem.trim() === stem) return;
+  const newStem = await showRenameDialog(stem, ext);
+  if (!newStem || newStem === stem) return;
 
-  const newName = newStem.trim() + ext;
+  const newName = newStem + ext;
   try {
     const newPath = await pywebview.api.rename_file(oldPath, newName);
-    if (newPath) {
-      outputPaths[id] = newPath;
-      const link = document.getElementById(`${id}-outlink`);
-      if (link) {
-        link.textContent = newName;
-        link.title = newPath;
-      }
+    if (!newPath) {
+      showRenameErrorDialog(
+        "Could not rename file. A file with that name may already exist.",
+      );
+      return;
+    }
+    outputPaths[id] = newPath;
+    const link = document.getElementById(`${id}-outlink`);
+    if (link) {
+      link.textContent = newName;
+      link.title = newPath;
     }
   } catch (e) {
-    alert("Rename failed: " + (e.message || e));
+    showRenameErrorDialog("Rename failed: " + (e.message || e));
   }
 }
 
