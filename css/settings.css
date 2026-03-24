@@ -104,8 +104,7 @@ input[type="range"]:hover::-webkit-slider-thumb {
 
 .controls-row {
   display: grid;
-  /* Custom */
-  /* grid-template-columns: 1fr 1fr 1fr auto; */
+  grid-template-columns: 1fr 1fr 1fr 1fr;
   gap: 5px;
   align-items: stretch;
   margin-bottom: 6px;
