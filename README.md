@@ -52,4 +52,4 @@ Your `.exe` will appear in the `dist/` folder. Share `Peak.exe` with your friend
 - GPU encoding (NVENC) requires an NVIDIA GPU. Uncheck it if you don't have one.
 - Audio bitrate defaults to 128 kbps — good for most Discord sharing.
 
-lowk vibecoded icel
+``` Ample help from Claude ```
