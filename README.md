@@ -11,6 +11,7 @@ main.py          ← Python backend (FFmpeg logic + pywebview API)
 index.html       ← Discord UI (HTML/CSS/JS)
 requirements.txt ← Python dependencies
 build.bat        ← One-click build to .exe (Windows)
+build.sh         ← Install script for Linux
 ```
 
 ---
@@ -18,9 +19,14 @@ build.bat        ← One-click build to .exe (Windows)
 ## Running from source
 
 1. **Install FFmpeg** and make sure `ffmpeg` and `ffprobe` are in your PATH.
-   - Download: https://ffmpeg.org/download.html
-   - Windows: extract → add the `bin/` folder to PATH → restart terminal
-
+   - Windows
+	   - Download: https://ffmpeg.org/download.html
+	   - extract → add the `bin/` folder to PATH → restart terminal
+   - Linux
+	   - Arch:        `sudo pacman -S ffmpeg`
+	   - Ubuntu:   `sudo apt install ffmpeg`
+	   - Fedora:    `sudo dnf install ffmpeg`
+	   
 2. **Install Python dependencies**
 
    ```
@@ -45,6 +51,22 @@ build.bat
 Your `.exe` will appear in the `dist/` folder. Share `Peak.exe` with your friends — they only need FFmpeg installed separately (it can't be bundled due to its license).
 
 ---
+
+## Building on Linux 
+
+Run the provided build script from your terminal:
+```bash
+chmod +x build.sh
+./build.sh
+```
+This will:
+- Install GTK dependencies for your distro (apt, pacman, dnf, or zypper)
+- Set up a Python virtual environment
+- Install Python dependencies
+- Create a `peak` command you can run from anywhere
+
+**Warning:**
+ The project folder must stay in place after building — the launcher points to it directly.
 
 ## Notes
 
