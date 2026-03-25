@@ -1,4 +1,4 @@
-# Peak — Video Compressor
+# Peak - Discord Video Compressor
 
 A Discord-styled video compressor. Drop a video in, pick your target size, and get a compressed `.mp4` back.
 
