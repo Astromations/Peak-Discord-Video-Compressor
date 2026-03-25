@@ -65,7 +65,7 @@ if errorlevel 1 (
 :: ── Build exe ─────────────────────────────────────────────────────
 echo.
 echo Building .exe...
-"%PY%" -m PyInstaller --onefile --windowed --name "Peak - Discord Video Compressor" --icon "peak.ico" --add-data "index.html;." --add-data "style.css;." --add-data "app.js;." --add-data "changelog.js;." --add-data "css;css" --add-data "js;js" --add-data "Font;Font" --add-data "peak.ico;." main.py
+"%PY%" -m PyInstaller --onefile --windowed --name "Peak" --icon "peak.ico" --add-data "index.html;." --add-data "style.css;." --add-data "app.js;." --add-data "changelog.js;." --add-data "css;css" --add-data "js;js" --add-data "Font;Font" --add-data "peak.ico;." main.py
 if errorlevel 1 goto :fail
 
 echo.
