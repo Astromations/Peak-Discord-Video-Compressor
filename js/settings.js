@@ -5,7 +5,9 @@
 
 // ── Toggles ───────────────────────────────────────────────────────
 function toggleCb(id) {
-  document.getElementById(id).checked = !document.getElementById(id).checked;
+  const cb = document.getElementById(id);
+  cb.checked = !cb.checked;
+  cb.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
 let _outputDirToggling = false;
@@ -28,12 +30,27 @@ function toggleOutputDir() {
 }
 
 async function pickDirectory() {
-  const dir = await pywebview.api.pick_directory();
+  const ready =
+    typeof _waitForPywebview === "function" ? await _waitForPywebview() : true;
+  if (!ready) {
+    setStatus("Could not connect to file dialog — try restarting", "error");
+    return;
+  }
+
+  let dir = null;
+  try {
+    dir = await pywebview.api.pick_directory();
+  } catch (err) {
+    setStatus("Folder picker error: " + (err.message || err), "error");
+    return;
+  }
+
   if (dir) {
     customOutDir = dir;
     document.getElementById("dirPathLabel").textContent = dir;
     document.getElementById("dirPathLabel").classList.add("set");
     document.getElementById("outputDirSubtitle").textContent = shortPath(dir);
+    setStatus("Custom output folder updated", "success");
   }
 }
 
@@ -79,13 +96,14 @@ function saveSettings() {
     format: currentFormat,
   };
   localStorage.setItem("peakSettings", JSON.stringify(settings));
+  if (window.pywebview?.api?.save_settings) {
+    pywebview.api.save_settings(settings).catch(() => {});
+  }
 }
 
-function loadSettings() {
-  const saved = localStorage.getItem("peakSettings");
-  if (!saved) return;
+function applySettings(settings) {
+  if (!settings) return;
   try {
-    const settings = JSON.parse(saved);
     // Sliders
     document.getElementById("sizeSlider").value = settings.targetSize || 10;
     document.getElementById("audioSlider").value = settings.audioBitrate || 128;
@@ -124,6 +142,31 @@ function loadSettings() {
   } catch (e) {
     console.warn("Failed to load settings:", e);
   }
+}
+
+async function loadSettings() {
+  let settings = null;
+
+  if (window.pywebview?.api?.load_settings) {
+    try {
+      settings = await pywebview.api.load_settings();
+    } catch (e) {
+      console.warn("Failed to load backend settings:", e);
+    }
+  }
+
+  if (!settings || Object.keys(settings).length === 0) {
+    const saved = localStorage.getItem("peakSettings");
+    if (saved) {
+      try {
+        settings = JSON.parse(saved);
+      } catch (e) {
+        console.warn("Failed to parse local settings:", e);
+      }
+    }
+  }
+
+  applySettings(settings);
 }
 
 // Auto-save on changes
