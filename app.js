@@ -16,6 +16,7 @@ let sessionPaused = false;
 let customOutDir = null;
 let idCounter = 0;
 let currentFormat = "mp4";
+let previewMode = "internal";
 const outputPaths = {};
 
 // ── Init ──────────────────────────────────────────────────────────

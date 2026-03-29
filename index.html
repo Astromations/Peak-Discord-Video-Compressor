@@ -94,12 +94,47 @@
             </div>
           </div>
 
+          <div class="queue-toolbar">
+            <span class="queue-toolbar-label">Video Tray</span>
+            <div
+              class="tray-view-toggle"
+              role="group"
+              aria-label="Queue view mode"
+            >
+              <button
+                class="tray-view-btn active"
+                id="queueViewListBtn"
+                onclick="setQueueView('list')"
+                title="List view"
+              >
+                List
+              </button>
+              <button
+                class="tray-view-btn"
+                id="queueViewGridBtn"
+                onclick="setQueueView('grid')"
+                title="Grid view"
+              >
+                Grid
+              </button>
+            </div>
+          </div>
+
           <!-- Queue -->
           <div class="queue-wrap" id="queueWrap">
             <div class="queue-empty" id="queueEmpty">No files added yet</div>
           </div>
         </div>
         <!-- /panel-left -->
+
+        <div
+          class="panel-divider"
+          id="panelDivider"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize video tray and settings panels"
+          title="Drag to resize panels"
+        ></div>
 
         <!-- Right panel: settings + compress + status -->
         <div class="panel-right">
@@ -343,6 +378,35 @@
               <div class="output-dir-picker" id="outputDirPicker">
                 <div class="dir-path" id="dirPathLabel">No folder selected</div>
                 <button class="btn-sm" onclick="pickDirectory()">Browse</button>
+              </div>
+            </div>
+
+            <div class="preview-mode-section">
+              <div class="preview-mode-head">
+                <strong>Thumbnail Preview</strong>
+                <small>Choose how videos open when clicking a thumbnail</small>
+              </div>
+              <div
+                class="preview-mode-toggle"
+                role="group"
+                aria-label="Preview mode"
+              >
+                <button
+                  class="preview-mode-btn active"
+                  id="previewModeInternalBtn"
+                  onclick="setPreviewMode('internal', true)"
+                  title="Play inside Peak"
+                >
+                  In Peak
+                </button>
+                <button
+                  class="preview-mode-btn"
+                  id="previewModeExternalBtn"
+                  onclick="setPreviewMode('external', true)"
+                  title="Play in your default media player"
+                >
+                  Default Player
+                </button>
               </div>
             </div>
           </div>
@@ -626,12 +690,185 @@
       </div>
     </div>
 
+    <!-- ═══════════════════════════════════════
+     THUMBNAIL PREVIEW MODAL
+     ═══════════════════════════════════════ -->
+    <div class="preview-overlay" id="previewOverlay">
+      <div
+        class="preview-card"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Video preview"
+      >
+        <div class="preview-header">
+          <div class="preview-title-wrap">
+            <div class="preview-title" id="previewTitle">Preview</div>
+            <div class="preview-subtitle">
+              All audio tracks mixed for preview
+            </div>
+          </div>
+          <button
+            class="preview-close"
+            onclick="closePreviewModal()"
+            title="Close"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div class="preview-player-shell" id="previewPlayerShell">
+          <video id="previewVideo" preload="metadata"></video>
+          <div class="preview-video-error" id="previewVideoError">
+            Preview unavailable
+          </div>
+          <button
+            class="preview-fs-close"
+            id="previewFsCloseBtn"
+            onclick="closePreviewModal()"
+            title="Close preview"
+          >
+            ✕
+          </button>
+
+          <div class="preview-controls">
+            <input
+              type="range"
+              id="previewSeek"
+              class="preview-seek"
+              min="0"
+              max="100"
+              value="0"
+              step="0.1"
+            />
+            <div class="preview-controls-row">
+              <button
+                class="preview-icon-btn"
+                id="previewPrevBtn"
+                onclick="previewPrevClip()"
+                title="Previous clip"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M11 17l-7-5 7-5v10zM18 17l-7-5 7-5v10z"
+                    fill="currentColor"
+                  />
+                </svg>
+              </button>
+
+              <button
+                class="preview-icon-btn"
+                id="previewPlayBtn"
+                onclick="togglePreviewPlay()"
+                title="Play / pause"
+              >
+                <svg
+                  id="previewPlayIcon"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="white"
+                >
+                  <path d="M5 3l14 9-14 9V3z" />
+                </svg>
+              </button>
+
+              <button
+                class="preview-icon-btn"
+                id="previewNextBtn"
+                onclick="previewNextClip()"
+                title="Next clip"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M13 17l7-5-7-5v10zM6 17l7-5-7-5v10z"
+                    fill="currentColor"
+                  />
+                </svg>
+              </button>
+
+              <span class="preview-time" id="previewTimeText">0:00 / 0:00</span>
+
+              <div class="preview-volume-wrap">
+                <button
+                  class="preview-icon-btn"
+                  id="previewMuteBtn"
+                  onclick="togglePreviewMute()"
+                  title="Mute / unmute"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M11 5L6 9H2v6h4l5 4V5zM19 9l-6 6"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </button>
+                <input
+                  type="range"
+                  id="previewVolume"
+                  class="preview-volume"
+                  min="0"
+                  max="1"
+                  value="1"
+                  step="0.05"
+                />
+              </div>
+
+              <div class="preview-spacer"></div>
+
+              <button
+                class="preview-icon-btn"
+                onclick="openPreviewInExternal()"
+                title="Open in default player"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M14 3h7v7M10 14L21 3M21 14v7h-7M3 10V3h7M3 21h7v-7"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </button>
+              <button
+                class="preview-icon-btn"
+                id="previewFullscreenBtn"
+                onclick="togglePreviewFullscreen()"
+                title="Fullscreen"
+              >
+                <svg
+                  id="previewFullscreenIcon"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <path
+                    d="M8 3H3v5M16 3h5v5M21 16v5h-5M8 21H3v-5"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <script src="changelog.js"></script>
     <script src="app.js"></script>
     <script src="js/helpers.js"></script>
     <script src="js/sliders.js"></script>
     <script src="js/settings.js"></script>
+    <script src="js/layout-resizer.js"></script>
     <script src="js/queue.js"></script>
+    <script src="js/preview.js"></script>
     <script src="js/compressor.js"></script>
     <script src="js/trim.js"></script>
     <script src="js/changelog.js"></script>

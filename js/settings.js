@@ -10,6 +10,18 @@ function toggleCb(id) {
   cb.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
+function setPreviewMode(mode, persist = false) {
+  if (mode !== "internal" && mode !== "external") return;
+  previewMode = mode;
+
+  const internalBtn = document.getElementById("previewModeInternalBtn");
+  const externalBtn = document.getElementById("previewModeExternalBtn");
+  if (internalBtn) internalBtn.classList.toggle("active", mode === "internal");
+  if (externalBtn) externalBtn.classList.toggle("active", mode === "external");
+
+  if (persist && typeof saveSettings === "function") saveSettings();
+}
+
 let _outputDirToggling = false;
 function toggleOutputDir() {
   if (_outputDirToggling) return;
@@ -94,6 +106,7 @@ function saveSettings() {
     outputDirEnabled: document.getElementById("outputDirToggle").checked,
     customOutDir: customOutDir,
     format: currentFormat,
+    previewMode: previewMode,
   };
   localStorage.setItem("peakSettings", JSON.stringify(settings));
   if (window.pywebview?.api?.save_settings) {
@@ -139,6 +152,8 @@ function applySettings(settings) {
     if (fmtOption) {
       selectFmt(fmtOption);
     }
+
+    setPreviewMode(settings.previewMode || "internal");
   } catch (e) {
     console.warn("Failed to load settings:", e);
   }
