@@ -6,13 +6,80 @@
 // ── Queue runner ──────────────────────────────────────────────────
 function startQueue() {
   if (isRunning || !queue.some((i) => i.status === "waiting")) return;
+  cancelRequested = false;
+  sessionPaused = false;
   isRunning = true;
   document.getElementById("progressTrack").classList.add("visible");
   updateCompressBtn();
   processNext();
 }
 
+function cancelQueue() {
+  if (!isRunning || cancelRequested) return;
+  console.log("[cancelQueue] Cancel requested, calling API...");
+  cancelRequested = true;
+  setStatus("Cancelling current compression...", "working");
+  updateCompressBtn();
+  try {
+    pywebview.api.cancel_compression();
+    console.log(
+      "[cancelQueue] API call succeeded, waiting for backend callback...",
+    );
+  } catch (err) {
+    console.log("[cancelQueue] API call failed:", err);
+    finishCancelledSession();
+  }
+}
+
+function finishCancelledSession() {
+  isRunning = false;
+  cancelRequested = false;
+  // Set sessionPaused to true whenever we cancel (regardless of waiting items)
+  // This allows restart button to show for cancelled items
+  sessionPaused = true;
+  const waiting = queue.filter((i) => i.status === "waiting").length;
+  const cancelled = queue.filter((i) => i.status === "cancelled").length;
+  console.log(
+    "[finishCancelledSession] Setting sessionPaused=true, waiting=",
+    waiting,
+    "cancelled=",
+    cancelled,
+  );
+  document.getElementById("progressTrack").classList.remove("visible");
+  setStatus("Compression session cancelled", "error");
+  updateCompressBtn();
+}
+
+function restartCancelledCompression() {
+  if (isRunning || cancelRequested) return;
+  const cancelled = queue.filter((i) => i.status === "cancelled");
+  if (cancelled.length === 0) return;
+
+  // Mark all cancelled files as waiting again
+  cancelled.forEach((item) => {
+    item.status = "waiting";
+    const sr = document.getElementById(`${item.id}-status`);
+    if (sr) {
+      sr.innerHTML = `<span class="chip chip-waiting">Waiting</span>`;
+    }
+  });
+
+  setStatus(
+    cancelled.length === 1
+      ? "Restarting 1 cancelled file"
+      : `Restarting ${cancelled.length} cancelled files`,
+    "working",
+  );
+  updateCompressBtn();
+  startQueue();
+}
+
 function processNext() {
+  if (cancelRequested) {
+    finishCancelledSession();
+    return;
+  }
+
   const next = queue.find((i) => i.status === "waiting");
   if (!next) {
     isRunning = false;
@@ -118,7 +185,29 @@ function onItemError(id, msg) {
   document
     .querySelectorAll(`#${id} .qi-btn`)
     .forEach((b) => (b.disabled = false));
+  if (cancelRequested) {
+    finishCancelledSession();
+    return;
+  }
   processNext();
+}
+
+function onItemCancelled(id, msg) {
+  console.log("[onItemCancelled] Callback received for item", id, "msg=", msg);
+  const item = queue.find((i) => i.id === id);
+  if (item) {
+    item.status = "cancelled";
+    console.log("[onItemCancelled] Marked item as cancelled");
+  }
+  const main = document.querySelector(`#${id} .qi-main`);
+  if (main) main.style.removeProperty("--row-progress");
+  const sr = document.getElementById(`${id}-status`);
+  if (sr)
+    sr.innerHTML = `<span class="chip chip-cancelled">Cancelled</span><span style="font-size:10px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px" title="${esc(msg || "Compression cancelled")}">${esc(msg || "Compression cancelled")}</span>`;
+  document
+    .querySelectorAll(`#${id} .qi-btn`)
+    .forEach((b) => (b.disabled = false));
+  finishCancelledSession();
 }
 
 function openOutputFile(id) {

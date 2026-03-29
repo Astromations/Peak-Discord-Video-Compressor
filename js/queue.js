@@ -8,16 +8,22 @@
 // pywebview fires "pywebviewready" when its JS bridge is fully initialised.
 // We gate open_file_dialog on this event so the promise never hangs silently.
 let _pywebviewReady = false;
-window.addEventListener("pywebviewready", () => { _pywebviewReady = true; });
+window.addEventListener("pywebviewready", () => {
+  _pywebviewReady = true;
+});
 
 async function _waitForPywebview(timeoutMs = 5000) {
   if (_pywebviewReady) return true;
   return new Promise((resolve) => {
     const timer = setTimeout(() => resolve(false), timeoutMs);
-    window.addEventListener("pywebviewready", () => {
-      clearTimeout(timer);
-      resolve(true);
-    }, { once: true });
+    window.addEventListener(
+      "pywebviewready",
+      () => {
+        clearTimeout(timer);
+        resolve(true);
+      },
+      { once: true },
+    );
   });
 }
 
@@ -75,7 +81,7 @@ dz.addEventListener("drop", async (e) => {
   for (const f of files) {
     // f.path is a non-standard property injected by pywebview on some backends.
     // If it's present and looks like an absolute path, use it directly.
-    let fullPath = (f.path && f.path !== f.name) ? f.path : null;
+    let fullPath = f.path && f.path !== f.name ? f.path : null;
 
     if (!fullPath) {
       // Fall back: ask Python to search common directories for this filename.
@@ -130,12 +136,52 @@ function updateCompressBtn() {
   const waiting = queue.filter((i) => i.status === "waiting").length;
   const btn = document.getElementById("compressBtn");
   const label = document.getElementById("compressBtnLabel");
+  const cancelBtn = document.getElementById("cancelBtn");
+  const resumeBtn = document.getElementById("resumeBtn");
   updateQueueEmpty();
   if (isRunning) {
     btn.disabled = true;
-    label.textContent = "Compressing…";
+    label.textContent = cancelRequested ? "Cancelling..." : "Compressing...";
+    if (cancelBtn) {
+      cancelBtn.classList.add("visible");
+      cancelBtn.disabled = !!cancelRequested;
+      cancelBtn.textContent = cancelRequested
+        ? "Cancelling..."
+        : "Cancel Session";
+    }
+    if (resumeBtn) {
+      resumeBtn.classList.remove("visible");
+      resumeBtn.disabled = true;
+      resumeBtn.textContent = "Resume Waiting Files";
+    }
     return;
   }
+
+  if (cancelBtn) {
+    cancelBtn.classList.remove("visible");
+    cancelBtn.disabled = false;
+    cancelBtn.textContent = "Cancel Session";
+  }
+
+  if (resumeBtn) {
+    const cancelled = queue.filter((i) => i.status === "cancelled").length;
+    const showResume = sessionPaused && cancelled > 0;
+    console.log(
+      "[updateCompressBtn] sessionPaused=",
+      sessionPaused,
+      "cancelled=",
+      cancelled,
+      "showResume=",
+      showResume,
+    );
+    resumeBtn.classList.toggle("visible", showResume);
+    resumeBtn.disabled = !showResume;
+    resumeBtn.textContent =
+      cancelled === 1
+        ? "Restart 1 Cancelled File"
+        : `Restart ${cancelled} Cancelled Files`;
+  }
+
   btn.disabled = waiting === 0;
   label.textContent =
     waiting === 1

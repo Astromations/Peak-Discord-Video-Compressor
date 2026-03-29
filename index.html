@@ -367,6 +367,18 @@
             <span id="compressBtnLabel">Compress</span>
           </button>
 
+          <button class="cancel-btn" id="cancelBtn" onclick="cancelQueue()">
+            Cancel Session
+          </button>
+
+          <button
+            class="resume-btn"
+            id="resumeBtn"
+            onclick="restartCancelledCompression()"
+          >
+            Restart Cancelled Files
+          </button>
+
           <!-- Status -->
           <div class="status-bar">
             <div class="progress-track" id="progressTrack">

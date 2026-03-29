@@ -50,21 +50,61 @@ def cf():
     return subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
 
 
-def run_pass(cmd, duration, progress_cb):
+class CompressionCancelled(Exception):
+    pass
+
+
+def run_pass(cmd, duration, progress_cb, should_cancel=None, on_process_change=None):
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
                              text=True, creationflags=cf())
+    if on_process_change:
+        on_process_change(proc)
     pattern = re.compile(r"^out_time_us=(\d+)$")
-    for line in proc.stdout:
-        m = pattern.match(line.strip())
-        if m:
-            try:
-                secs = int(m.group(1)) / 1_000_000
-                progress_cb(min(secs / duration, 1.0))
-            except (ValueError, ZeroDivisionError):
-                pass
-    proc.wait()
-    if proc.returncode != 0:
-        raise RuntimeError(f"FFmpeg exited with code {proc.returncode}")
+    try:
+        while True:
+            if should_cancel and should_cancel():
+                try:
+                    proc.terminate()
+                    proc.wait(timeout=2)
+                except Exception:
+                    try:
+                        proc.kill()
+                    except Exception:
+                        pass
+                raise CompressionCancelled("Compression cancelled")
+
+            line = proc.stdout.readline()
+            if line == "":
+                if proc.poll() is not None:
+                    break
+                continue
+
+            m = pattern.match(line.strip())
+            if m:
+                try:
+                    secs = int(m.group(1)) / 1_000_000
+                    progress_cb(min(secs / duration, 1.0))
+                except (ValueError, ZeroDivisionError):
+                    pass
+
+        proc.wait()
+        if should_cancel and should_cancel():
+            raise CompressionCancelled("Compression cancelled")
+        if proc.returncode != 0:
+            raise RuntimeError(f"FFmpeg exited with code {proc.returncode}")
+    finally:
+        if on_process_change:
+            on_process_change(None)
+
+
+def get_settings_file_path():
+    if os.name == "nt":
+        base_dir = os.environ.get("APPDATA") or os.path.expanduser("~")
+    else:
+        base_dir = os.path.expanduser("~")
+    settings_dir = os.path.join(base_dir, "Peak")
+    os.makedirs(settings_dir, exist_ok=True)
+    return os.path.join(settings_dir, "settings.json")
 
 
 def parse_time(s):
@@ -171,6 +211,45 @@ class Api:
 
     def __init__(self):
         self._window = None
+        self._settings_file = get_settings_file_path()
+        self._active_proc = None
+        self._active_proc_lock = threading.Lock()
+        self._cancel_flag = threading.Event()
+
+    def _set_active_proc(self, proc):
+        with self._active_proc_lock:
+            self._active_proc = proc
+
+    def save_settings(self, settings):
+        try:
+            if not isinstance(settings, dict):
+                return False
+            with open(self._settings_file, "w", encoding="utf-8") as f:
+                json.dump(settings, f)
+            return True
+        except Exception:
+            return False
+
+    def load_settings(self):
+        try:
+            if not os.path.isfile(self._settings_file):
+                return {}
+            with open(self._settings_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            return data if isinstance(data, dict) else {}
+        except Exception:
+            return {}
+
+    def cancel_compression(self):
+        self._cancel_flag.set()
+        with self._active_proc_lock:
+            proc = self._active_proc
+        if proc and proc.poll() is None:
+            try:
+                proc.terminate()
+            except Exception:
+                pass
+        return True
 
     def check_ffmpeg(self):
         return check_ffmpeg()
@@ -190,8 +269,21 @@ class Api:
             return []
 
     def pick_directory(self):
-        result = self._window.create_file_dialog(webview.FOLDER_DIALOG)
-        return result[0] if result else None
+        # Use OPEN_DIALOG so the user gets the same modern explorer UI as
+        # the Add Videos action, then derive the target directory.
+        result = self._window.create_file_dialog(
+            webview.OPEN_DIALOG,
+            allow_multiple=False,
+            file_types=("All Files (*.*)",),
+        )
+        if not result:
+            return None
+        picked = result[0] if isinstance(result, (list, tuple)) else result
+        if not picked:
+            return None
+        if os.path.isdir(picked):
+            return picked
+        return os.path.dirname(picked)
 
     def open_file(self, filepath):
         try:
@@ -390,9 +482,12 @@ class Api:
                  format_ext, trim_start, trim_end, enabled_tracks):
         def _run():
             try:
+                self._cancel_flag.clear()
                 self._do_compress(item_id, filepath, target_size_mb, audio_kbps,
                                   use_gpu, combine_audio, two_pass, output_dir,
                                   format_ext, trim_start, trim_end, enabled_tracks)
+            except CompressionCancelled:
+                self._emit("onItemCancelled", item_id, "Compression cancelled")
             except Exception as e:
                 self._emit("onItemError", item_id, str(e))
         threading.Thread(target=_run, daemon=True).start()
@@ -413,6 +508,8 @@ class Api:
         eff_start    = t_start or 0.0
         eff_end      = min(t_end, duration) if t_end else duration
         eff_duration = max(eff_end - eff_start, 0.1)
+        
+        print(f"[COMPRESS {item_id}] Target={target_size_mb}MB, Full duration={duration:.2f}s, trim_start={trim_start}, trim_end={trim_end}, eff_duration={eff_duration:.2f}s")
 
         src_ext = os.path.splitext(input_file)[1].lower()
         out_ext = src_ext if format_ext == "original" else f".{format_ext}"
@@ -429,8 +526,39 @@ class Api:
 
         n_active = len(active)
 
-        audio_bits    = audio_kbps * 1000 * eff_duration
+        # Audio budget must reflect how many tracks are encoded:
+        # - combined tracks => 1 output audio stream
+        # - separate tracks => one stream per active track
+        if n_active == 0:
+            audio_stream_count = 0
+        elif combine_audio and n_active > 1:
+            audio_stream_count = 1
+        else:
+            audio_stream_count = n_active
+
+        audio_bits    = audio_kbps * 1000 * eff_duration * audio_stream_count
         video_bitrate = max(int((target_bits - audio_bits) / eff_duration), 50_000)
+
+        # Safety valve: for short clips, codec overhead dominates and can cause overshoot.
+        # Estimate output size and reduce bitrate if needed to stay under target.
+        # Overhead estimate: much higher for very short clips (container overhead + keyframes)
+        # For short clips (<10s), overhead can be 1-2MB+ due to container structure & initial keyframes
+        if eff_duration < 10:
+            # For very short clips, use aggressive overhead estimate
+            estimated_overhead_bits = max(2_000_000, 500_000 + (100_000 * eff_duration)) * 8
+        else:
+            estimated_overhead_bits = (500_000 + (50_000 * eff_duration)) * 8
+        
+        estimated_output_bits = (video_bitrate * eff_duration) + audio_bits + estimated_overhead_bits
+        print(f"[BITRATE] Initial: target={target_bits / 8 / 1e6:.2f}MB, audio={audio_bits / 8 / 1e6:.2f}MB ({audio_stream_count} stream(s)), overhead_est={estimated_overhead_bits / 8 / 1e6:.2f}MB")
+        print(f"[BITRATE] Initial video_bitrate={video_bitrate/1e6:.2f}Mbps, estimated_output={estimated_output_bits / 8 / 1e6:.2f}MB")
+        
+        if estimated_output_bits > target_bits:
+            # Scale down video bitrate to fit within target, leaving room for audio & overhead
+            safety_buffer = int(target_bits * 0.08)  # Reserve 8% for overhead (was 5%)
+            available_for_video = target_bits - audio_bits - safety_buffer
+            video_bitrate = max(int(available_for_video / eff_duration), 50_000)
+            print(f"[BITRATE] OVERSHOOT DETECTED! Scaling down: video_bitrate={video_bitrate/1e6:.2f}Mbps")
 
         base_name   = os.path.splitext(os.path.basename(input_file))[0] + "_compressed" + out_ext
         out_dir     = output_dir if (output_dir and os.path.isdir(output_dir)) \
@@ -438,7 +566,9 @@ class Api:
         output_file = os.path.join(out_dir, base_name)
 
         seek_args = ["-ss", str(t_start)] if t_start is not None else []
-        to_args   = ["-to", str(t_end)]   if t_end   is not None else []
+        # Use explicit clip duration instead of "-to" to avoid ambiguity when
+        # a start offset is present. This guarantees a true (end-start) segment.
+        dur_args  = ["-t", str(eff_duration)] if (t_start is not None or t_end is not None) else []
 
         if combine_audio and n_active > 1:
             filter_in = "".join(f"[0:a:{i}]" for i in active)
@@ -495,14 +625,29 @@ class Api:
         base_args = ["ffmpeg", "-y", "-progress", "pipe:1", "-nostats"]
 
         if two_pass:
-            p1 = base_args + seek_args + ["-i", input_file] + to_args + p1_codec + bv_flags + \
+            p1 = base_args + seek_args + ["-i", input_file] + dur_args + p1_codec + bv_flags + \
                  ["-map", "0:v", "-an", "-f", "null", null_device()]
-            p2 = base_args + seek_args + ["-i", input_file] + to_args + p2_codec + bv_flags + \
+            p2 = base_args + seek_args + ["-i", input_file] + dur_args + p2_codec + bv_flags + \
                  audio_map + audio_encode + faststart + [output_file]
 
-            run_pass(p1, eff_duration, lambda f: progress_cb(0, f))
+            print(f"[FFMPEG P1] {' '.join(p1)}")
+            print(f"[FFMPEG P2] {' '.join(p2)}")
+
+            run_pass(
+                p1,
+                eff_duration,
+                lambda f: progress_cb(0, f),
+                should_cancel=self._cancel_flag.is_set,
+                on_process_change=self._set_active_proc,
+            )
             start_time[0] = time.time()
-            run_pass(p2, eff_duration, lambda f: progress_cb(1, f))
+            run_pass(
+                p2,
+                eff_duration,
+                lambda f: progress_cb(1, f),
+                should_cancel=self._cancel_flag.is_set,
+                on_process_change=self._set_active_proc,
+            )
 
             for ext in ("-0.log", "-0.log.mbtree"):
                 try:
@@ -510,10 +655,17 @@ class Api:
                 except OSError:
                     pass
         else:
-            sc = base_args + seek_args + ["-i", input_file] + to_args + s_codec + bv_flags + \
+            sc = base_args + seek_args + ["-i", input_file] + dur_args + s_codec + bv_flags + \
                  audio_map + audio_encode + faststart + [output_file]
+            print(f"[FFMPEG SINGLE] {' '.join(sc)}")
             start_time[0] = time.time()
-            run_pass(sc, eff_duration, single_progress_cb)
+            run_pass(
+                sc,
+                eff_duration,
+                single_progress_cb,
+                should_cancel=self._cancel_flag.is_set,
+                on_process_change=self._set_active_proc,
+            )
 
         self._emit("onItemDone", item_id, output_file)
 

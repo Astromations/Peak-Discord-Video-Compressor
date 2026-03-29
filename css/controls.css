@@ -130,6 +130,58 @@
   cursor: not-allowed;
 }
 
+.cancel-btn {
+  display: none;
+  width: 100%;
+  padding: 8px;
+  border: 1px solid rgba(242, 63, 66, 0.45);
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  background: rgba(242, 63, 66, 0.14);
+  color: #ffb3b5;
+  transition: background 0.15s;
+  margin-bottom: 8px;
+}
+.cancel-btn.visible {
+  display: block;
+}
+.cancel-btn:hover:not(:disabled) {
+  background: rgba(242, 63, 66, 0.22);
+}
+.cancel-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.resume-btn {
+  display: none;
+  width: 100%;
+  padding: 8px;
+  border: 1px solid rgba(35, 165, 90, 0.42);
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  background: rgba(35, 165, 90, 0.14);
+  color: #9de3b8;
+  transition: background 0.15s;
+  margin-bottom: 8px;
+}
+.resume-btn.visible {
+  display: block;
+}
+.resume-btn:hover:not(:disabled) {
+  background: rgba(35, 165, 90, 0.22);
+}
+.resume-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 /* ── Status bar ───────────────────────────────────────────────────── */
 
 .status-bar {
