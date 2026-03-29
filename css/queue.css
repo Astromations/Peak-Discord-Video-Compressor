@@ -154,6 +154,10 @@
   background: rgba(242, 63, 66, 0.2);
   color: var(--danger);
 }
+.chip-cancelled {
+  background: rgba(237, 171, 36, 0.22);
+  color: #f5c56f;
+}
 
 .qi-progress {
   display: flex;

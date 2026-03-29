@@ -40,4 +40,7 @@ function resetSettings() {
   document.getElementById("outputDirSubtitle").textContent =
     "Off — saves next to source file";
   customOutDir = null;
+  if (typeof saveSettings === "function") {
+    saveSettings();
+  }
 }

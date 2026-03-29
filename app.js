@@ -11,6 +11,8 @@
 // ── Shared app state (used across modules) ────────────────────────
 let queue = [];
 let isRunning = false;
+let cancelRequested = false;
+let sessionPaused = false;
 let customOutDir = null;
 let idCounter = 0;
 let currentFormat = "mp4";
@@ -23,11 +25,22 @@ window.addEventListener("load", async () => {
   initSlider("trimVol", null, null, 0, 1);
 
   // Load persistent settings after sliders init
-  setTimeout(() => {
+  setTimeout(async () => {
     if (typeof loadSettings === "function") {
-      loadSettings();
+      await loadSettings();
     }
   }, 0);
+
+  // Ensure persisted settings are applied once the pywebview bridge is ready.
+  window.addEventListener(
+    "pywebviewready",
+    async () => {
+      if (typeof loadSettings === "function") {
+        await loadSettings();
+      }
+    },
+    { once: true },
+  );
 
   buildChangelog();
 
