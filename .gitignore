@@ -2,4 +2,6 @@
 build
 dist
 TODO.md
-Peak.spec
+*.spec
+*.exe
+*.zip
