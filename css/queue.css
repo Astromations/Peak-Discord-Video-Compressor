@@ -5,11 +5,61 @@
 .queue-wrap {
   flex: 1;
   min-height: 0;
+  max-height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
   gap: 3px;
+  overscroll-behavior: contain;
+}
+
+.queue-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.queue-toolbar-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.35px;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.tray-view-toggle {
+  display: inline-flex;
+  align-items: center;
+  background: var(--bg-secondary);
+  border-radius: 7px;
+  padding: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.tray-view-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 5px;
+  padding: 4px 9px;
+  cursor: pointer;
+  transition:
+    background 0.12s,
+    color 0.12s;
+}
+
+.tray-view-btn:hover {
+  color: var(--text-normal);
+}
+
+.tray-view-btn.active {
+  color: var(--text-normal);
+  background: var(--bg-tertiary);
 }
 
 .queue-wrap::-webkit-scrollbar,
@@ -56,6 +106,49 @@
   position: relative;
 }
 
+.qi-drag-handle {
+  width: 20px;
+  height: 22px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  flex-shrink: 0;
+  transition:
+    background 0.12s,
+    color 0.12s;
+}
+
+.qi-drag-handle:hover {
+  background: var(--bg-modifier);
+  color: var(--text-normal);
+}
+
+.qi-drag-handle:active {
+  cursor: grabbing;
+}
+
+.qi.dragging {
+  opacity: 0.65;
+}
+
+.qi.drag-target-before {
+  box-shadow: inset 0 2px 0 0 var(--brand);
+}
+
+.qi.drag-target-after {
+  box-shadow: inset 0 -2px 0 0 var(--brand);
+}
+
+.queue-wrap.queue-locked .qi-drag-handle {
+  opacity: 0.35;
+  cursor: default;
+}
+
 .qi-main::before {
   content: "";
   position: absolute;
@@ -79,6 +172,49 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.qi-thumb-hit {
+  position: relative;
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  border-radius: 4px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.qi-thumb-hit:hover .qi-thumb-play {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.qi-thumb-hit:focus-visible .qi-thumb-play {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.qi-thumb-play {
+  position: absolute;
+  inset: auto auto 6px 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.62);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(0.86);
+  pointer-events: none;
+  transition:
+    opacity 0.12s,
+    transform 0.12s;
 }
 
 .qi-thumb img {
@@ -274,6 +410,70 @@
 .qi-btn:disabled:hover {
   background: transparent;
   color: var(--text-muted);
+}
+
+.queue-wrap.queue-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 8px;
+  align-content: flex-start;
+}
+
+.queue-wrap.queue-grid .queue-empty {
+  grid-column: 1 / -1;
+}
+
+.queue-wrap.queue-grid .qi {
+  min-width: 0;
+}
+
+.queue-wrap.queue-grid .qi-main {
+  display: grid;
+  grid-template-columns: 20px 1fr auto;
+  grid-template-rows: auto auto;
+  align-items: start;
+  gap: 8px;
+}
+
+.queue-wrap.queue-grid .qi-drag-handle {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  margin-top: 2px;
+}
+
+.queue-wrap.queue-grid .qi-thumb {
+  grid-column: 2;
+  grid-row: 1;
+  width: 100%;
+  height: 0;
+  padding-top: 56%;
+  position: relative;
+}
+
+.queue-wrap.queue-grid .qi-thumb-hit {
+  grid-column: 2;
+  grid-row: 1;
+  width: 100%;
+}
+
+.queue-wrap.queue-grid .qi-thumb > * {
+  position: absolute;
+  inset: 0;
+}
+
+.queue-wrap.queue-grid .qi-body {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.queue-wrap.queue-grid .qi-actions {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  align-self: start;
+}
+
+.queue-wrap.queue-grid .qi-status-row {
+  flex-wrap: wrap;
 }
 
 .qi-trim-badge {

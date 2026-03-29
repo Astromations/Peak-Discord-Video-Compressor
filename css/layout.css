@@ -27,6 +27,7 @@
   min-height: 0;
   flex: 1;
   gap: 8px;
+  overflow: hidden;
 }
 
 /* right panel — settings + compress + status */
@@ -35,6 +36,17 @@
   display: flex;
   flex-direction: column;
   gap: 0;
+  min-width: 0;
+}
+
+.panel-divider {
+  display: none;
+}
+
+body.is-resizing,
+body.is-resizing * {
+  cursor: col-resize !important;
+  user-select: none !important;
 }
 
 /* ── Horizontal layout ──────────────────────────────────────────── */
@@ -48,7 +60,6 @@
   .panel-left {
     flex: 1;
     min-width: 240px;
-    border-right: 1px solid var(--border);
     padding-right: 14px;
   }
   /* Custom */
@@ -56,6 +67,55 @@
     /* width: 260px; */
     flex-shrink: 0;
     padding-left: 14px;
+  }
+
+  .app-body.resized .panel-left {
+    flex: 0 0 var(--left-panel-width);
+  }
+
+  .app-body.resized .panel-right {
+    flex: 0 0 var(--right-panel-width);
+  }
+
+  .panel-divider {
+    display: block;
+    width: 10px;
+    margin: 0 2px;
+    position: relative;
+    cursor: col-resize;
+    flex: 0 0 10px;
+  }
+
+  .panel-divider::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 1px;
+    transform: translateX(-50%);
+    background: var(--border);
+  }
+
+  .panel-divider::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 3px;
+    height: 36px;
+    transform: translate(-50%, -50%);
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.22);
+    transition: background 0.12s;
+  }
+
+  .panel-divider:hover::after {
+    background: rgba(255, 255, 255, 0.42);
+  }
+
+  .panel-divider.dragging::after {
+    background: var(--brand);
   }
 
   /* remove top border on settings in wide layout — panel-left provides separation */

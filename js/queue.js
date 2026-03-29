@@ -8,6 +8,9 @@
 // pywebview fires "pywebviewready" when its JS bridge is fully initialised.
 // We gate open_file_dialog on this event so the promise never hangs silently.
 let _pywebviewReady = false;
+let queueViewMode = "list";
+let dragSourceId = null;
+let dragHandleArmedId = null;
 window.addEventListener("pywebviewready", () => {
   _pywebviewReady = true;
 });
@@ -111,6 +114,7 @@ function addToQueue(path) {
     audioTracks: [],
   });
   renderQueueItem(id, name, path);
+  setQueueDragEnabled(!isRunning);
   updateCompressBtn();
 
   pywebview.api.get_thumbnail(path).then((uri) => {
@@ -138,6 +142,7 @@ function updateCompressBtn() {
   const label = document.getElementById("compressBtnLabel");
   const cancelBtn = document.getElementById("cancelBtn");
   const resumeBtn = document.getElementById("resumeBtn");
+  setQueueDragEnabled(!isRunning);
   updateQueueEmpty();
   if (isRunning) {
     btn.disabled = true;
@@ -197,9 +202,23 @@ function renderQueueItem(id, name, path) {
   const el = document.createElement("div");
   el.className = "qi";
   el.id = id;
+  el.draggable = !isRunning;
   el.innerHTML = `
     <div class="qi-main">
-      <div class="qi-thumb"><div class="thumb-spinner"></div></div>
+      <button class="qi-drag-handle" title="Drag to reorder" aria-label="Drag to reorder" onmousedown="armQueueDrag('${id}', event)">
+        <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
+          <circle cx="2" cy="2" r="1" fill="currentColor"/>
+          <circle cx="9" cy="2" r="1" fill="currentColor"/>
+          <circle cx="2" cy="5.5" r="1" fill="currentColor"/>
+          <circle cx="9" cy="5.5" r="1" fill="currentColor"/>
+          <circle cx="2" cy="9" r="1" fill="currentColor"/>
+          <circle cx="9" cy="9" r="1" fill="currentColor"/>
+        </svg>
+      </button>
+      <button class="qi-thumb-hit" onclick="previewQueueItem('${id}')" title="Preview video">
+        <div class="qi-thumb"><div class="thumb-spinner"></div></div>
+        <span class="qi-thumb-play" aria-hidden="true">▶</span>
+      </button>
       <div class="qi-body">
         <button class="qi-name qi-name-link" title="Reveal in explorer" onclick="revealSourceFile('${esc(path)}')">${esc(name)}</button>
         <div class="qi-status-row" id="${id}-status">
@@ -211,6 +230,135 @@ function renderQueueItem(id, name, path) {
         <button class="qi-btn remove" onclick="removeFromQueue('${id}')" title="Remove">✕</button>
       </div>
     </div>`;
+
+  el.addEventListener("dragstart", (e) => {
+    if (isRunning || dragHandleArmedId !== id) {
+      e.preventDefault();
+      return;
+    }
+    dragSourceId = id;
+    el.classList.add("dragging");
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", id);
+  });
+
+  el.addEventListener("dragend", () => {
+    el.classList.remove("dragging");
+    wrap.querySelectorAll(".qi.drag-target").forEach((n) => {
+      n.classList.remove(
+        "drag-target",
+        "drag-target-before",
+        "drag-target-after",
+      );
+    });
+    dragSourceId = null;
+    dragHandleArmedId = null;
+    syncQueueOrderFromDom();
+  });
+
   wrap.insertBefore(el, empty);
   empty.style.display = "none";
 }
+
+function armQueueDrag(id, e) {
+  if (isRunning) return;
+  dragHandleArmedId = id;
+  if (e) e.stopPropagation();
+}
+
+function setQueueDragEnabled(enabled) {
+  const wrap = document.getElementById("queueWrap");
+  if (!wrap) return;
+  wrap.classList.toggle("queue-locked", !enabled);
+  wrap.querySelectorAll(".qi").forEach((item) => {
+    item.draggable = enabled;
+  });
+}
+
+function setQueueView(mode) {
+  const wrap = document.getElementById("queueWrap");
+  if (!wrap || (mode !== "list" && mode !== "grid")) return;
+  queueViewMode = mode;
+  wrap.classList.toggle("queue-grid", mode === "grid");
+
+  const listBtn = document.getElementById("queueViewListBtn");
+  const gridBtn = document.getElementById("queueViewGridBtn");
+  if (listBtn) listBtn.classList.toggle("active", mode === "list");
+  if (gridBtn) gridBtn.classList.toggle("active", mode === "grid");
+}
+
+function syncQueueOrderFromDom() {
+  const wrap = document.getElementById("queueWrap");
+  if (!wrap || queue.length <= 1) return;
+  const ids = Array.from(wrap.querySelectorAll(".qi")).map((node) => node.id);
+  if (!ids.length) return;
+  const orderIndex = new Map(ids.map((id, idx) => [id, idx]));
+  queue.sort((a, b) => {
+    const ai = orderIndex.get(a.id);
+    const bi = orderIndex.get(b.id);
+    if (ai === undefined && bi === undefined) return 0;
+    if (ai === undefined) return 1;
+    if (bi === undefined) return -1;
+    return ai - bi;
+  });
+}
+
+function getHoveredQueueItem(x, y, wrap) {
+  const hovered = document.elementFromPoint(x, y)?.closest(".qi");
+  if (hovered && hovered.parentElement === wrap && hovered.id !== dragSourceId)
+    return hovered;
+  return null;
+}
+
+function clearDragTargets(wrap) {
+  wrap.querySelectorAll(".qi.drag-target").forEach((n) => {
+    n.classList.remove(
+      "drag-target",
+      "drag-target-before",
+      "drag-target-after",
+    );
+  });
+}
+
+document.addEventListener("mouseup", () => {
+  dragHandleArmedId = null;
+});
+
+const queueWrap = document.getElementById("queueWrap");
+queueWrap.addEventListener("dragover", (e) => {
+  if (isRunning || !dragSourceId) return;
+  e.preventDefault();
+
+  const hovered = getHoveredQueueItem(e.clientX, e.clientY, queueWrap);
+  clearDragTargets(queueWrap);
+  if (!hovered) return;
+
+  const rect = hovered.getBoundingClientRect();
+  let placeBefore = e.clientY < rect.top + rect.height / 2;
+
+  if (queueViewMode === "grid") {
+    const nearRowMid =
+      Math.abs(e.clientY - (rect.top + rect.height / 2)) < rect.height * 0.25;
+    placeBefore = nearRowMid
+      ? e.clientX < rect.left + rect.width / 2
+      : e.clientY < rect.top + rect.height / 2;
+  }
+
+  hovered.classList.add(
+    "drag-target",
+    placeBefore ? "drag-target-before" : "drag-target-after",
+  );
+  queueWrap.insertBefore(
+    document.getElementById(dragSourceId),
+    placeBefore ? hovered : hovered.nextSibling,
+  );
+});
+
+queueWrap.addEventListener("drop", (e) => {
+  if (isRunning || !dragSourceId) return;
+  e.preventDefault();
+  clearDragTargets(queueWrap);
+  syncQueueOrderFromDom();
+});
+
+setQueueView("list");

@@ -50,6 +50,54 @@ def cf():
     return subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
 
 
+def _pick_directory_windows_modern():
+    """Return a selected folder path using modern Windows OpenFileDialog UI."""
+    if os.name != "nt":
+        return None
+
+    ps_script = r"""
+Add-Type -AssemblyName System.Windows.Forms;
+$dlg = New-Object System.Windows.Forms.OpenFileDialog;
+$dlg.Filter = 'Folders|*.none';
+$dlg.ValidateNames = $false;
+$dlg.CheckFileExists = $false;
+$dlg.CheckPathExists = $true;
+$dlg.Multiselect = $false;
+$dlg.FileName = 'Select Folder';
+if ($dlg.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
+  $folder = Split-Path -Path $dlg.FileName -Parent;
+  if ([string]::IsNullOrWhiteSpace($folder)) { $folder = $dlg.FileName }
+  [Console]::OutputEncoding = [System.Text.Encoding]::UTF8;
+  Write-Output $folder;
+}
+""".strip()
+
+    try:
+        result = subprocess.run(
+            [
+                "powershell",
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-Command",
+                ps_script,
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            creationflags=cf(),
+        )
+        if result.returncode != 0:
+            return None
+        picked = (result.stdout or "").strip().splitlines()
+        if not picked:
+            return None
+        folder = picked[-1].strip().strip('"')
+        return folder if folder and os.path.isdir(folder) else None
+    except Exception:
+        return None
+
+
 class CompressionCancelled(Exception):
     pass
 
@@ -269,12 +317,19 @@ class Api:
             return []
 
     def pick_directory(self):
-        # Use OPEN_DIALOG so the user gets the same modern explorer UI as
-        # the Add Videos action, then derive the target directory.
+        # On Windows, prefer a modern folder-targeting picker that matches the
+        # style of the Add Videos dialog while still returning a directory.
+        if os.name == "nt":
+            picked = _pick_directory_windows_modern()
+            if picked:
+                return picked
+
+        # Fallback: pywebview folder dialog on other platforms/backends.
+        dialog_kind = getattr(webview, "FOLDER_DIALOG", webview.OPEN_DIALOG)
+
         result = self._window.create_file_dialog(
-            webview.OPEN_DIALOG,
+            dialog_kind,
             allow_multiple=False,
-            file_types=("All Files (*.*)",),
         )
         if not result:
             return None
@@ -296,6 +351,21 @@ class Api:
                 subprocess.Popen(["xdg-open", os.path.dirname(filepath)])
         except Exception:
             pass
+
+    def open_in_media_player(self, filepath):
+        try:
+            path = os.path.normpath(filepath)
+            if not os.path.isfile(path):
+                return False
+            if os.name == "nt":
+                os.startfile(path)
+            elif sys.platform == "darwin":
+                subprocess.Popen(["open", path])
+            else:
+                subprocess.Popen(["xdg-open", path])
+            return True
+        except Exception:
+            return False
 
     def get_thumbnail(self, filepath):
         if not check_ffmpeg():

@@ -39,7 +39,8 @@ body {
   font-size: 14px;
   background: var(--bg-base);
   color: var(--text-normal);
-  -webkit-font-smoothing: antialiased;
+  /* Custom */
+  /* -webkit-font-smoothing: antialiased; */
   user-select: none;
   overflow: hidden;
 }
