@@ -60,11 +60,11 @@ body.is-resizing * {
   .panel-left {
     flex: 1;
     min-width: 240px;
-    padding-right: 14px;
+    padding-left: 8px;
   }
-  /* Custom */
+
   .panel-right {
-    /* width: 260px; */
+    width: 260px;
     flex-shrink: 0;
     padding-left: 14px;
   }
@@ -74,7 +74,7 @@ body.is-resizing * {
   }
 
   .app-body.resized .panel-right {
-    flex: 0 0 var(--right-panel-width);
+    flex: 0 0 calc(var(--right-panel-width) - 30px);
   }
 
   .panel-divider {
