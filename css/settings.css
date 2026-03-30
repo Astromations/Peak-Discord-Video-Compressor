@@ -6,6 +6,7 @@
   flex-shrink: 0;
   border-top: 1px solid var(--border);
   padding-top: 10px;
+  container-type: inline-size;
 }
 
 .settings-header {
@@ -105,10 +106,16 @@ input[type="range"]:hover::-webkit-slider-thumb {
 
 .controls-row {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr;
+  grid-template-columns: repeat(4, 1fr);
   gap: 5px;
-  align-items: stretch;
   margin-bottom: 6px;
+  align-items: stretch;
+}
+
+@container (max-width: 945px) {
+  .controls-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 /* ── Toggle rows ──────────────────────────────────────────────────── */
