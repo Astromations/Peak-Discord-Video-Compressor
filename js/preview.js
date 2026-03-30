@@ -21,6 +21,7 @@ const previewPrevBtn = document.getElementById("previewPrevBtn");
 const previewNextBtn = document.getElementById("previewNextBtn");
 const previewFsCloseBtn = document.getElementById("previewFsCloseBtn");
 let previewFsCloseTimer = null;
+let previewClosing = false;
 
 function _findPreviewItem(id) {
   return queue.find((i) => i.id === id) || null;
@@ -85,7 +86,23 @@ async function _openPreviewForItem(item, autoplay) {
   }
 }
 
-function closePreviewModal() {
+async function _exitPreviewFullscreenIfNeeded() {
+  if (document.fullscreenElement === previewPlayerShell) {
+    try {
+      await document.exitFullscreen?.();
+    } catch (_) {
+      // Ignore and continue cleanup; some environments can reject if already exiting.
+    }
+  }
+}
+
+async function closePreviewModal() {
+  if (previewClosing) return;
+  previewClosing = true;
+
+  _hidePreviewFsClose();
+  await _exitPreviewFullscreenIfNeeded();
+
   previewVideo.pause();
   previewVideo.src = "";
   previewOverlay.classList.remove("open");
@@ -99,6 +116,7 @@ function closePreviewModal() {
 
   previewItemId = null;
   _updatePreviewNavButtons();
+  previewClosing = false;
 }
 
 function togglePreviewPlay() {
