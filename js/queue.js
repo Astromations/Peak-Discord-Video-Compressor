@@ -217,7 +217,11 @@ function renderQueueItem(id, name, path) {
       </button>
       <button class="qi-thumb-hit" onclick="previewQueueItem('${id}')" title="Preview video">
         <div class="qi-thumb"><div class="thumb-spinner"></div></div>
-        <span class="qi-thumb-play" aria-hidden="true">▶</span>
+        <span class="qi-thumb-play" aria-hidden="true">
+<svg width="38" height="43" viewBox="0 0 38 43" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M7.5351 0.697925C4.20193 -1.26277 0 1.14049 0 5.00759V37.5235C0 41.3905 4.20193 43.7938 7.5351 41.8331L35.1737 25.5751C38.46 23.6419 38.46 18.8891 35.1737 16.9558L7.5351 0.697925Z" fill="white" fill-opacity="0.6"/>
+</svg>
+</span>
       </button>
       <div class="qi-body">
         <button class="qi-name qi-name-link" title="Reveal in explorer" onclick="revealSourceFile('${esc(path)}')">${esc(name)}</button>
@@ -226,8 +230,11 @@ function renderQueueItem(id, name, path) {
         </div>
       </div>
       <div class="qi-actions">
-        <button class="qi-btn trim-btn" id="${id}-trimbtn" onclick="openTrimModal('${id}')" title="Trim / preview">✂</button>
-        <button class="qi-btn remove" onclick="removeFromQueue('${id}')" title="Remove">✕</button>
+        <button class="qi-btn remove" onclick="removeFromQueue('${id}')" title="Remove"><svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M36 0L20 16L4 0L0 4L16 20L0 36L4 40L20 24L36 40L40 36L24 20L40 4L36 0Z" fill="white" fill-opacity="0.6"/>
+</svg>
+</button>
+<button class="qi-btn trim-btn" id="${id}-trimbtn" onclick="openTrimModal('${id}')" title="Trim / preview">✂</button>
       </div>
     </div>`;
 

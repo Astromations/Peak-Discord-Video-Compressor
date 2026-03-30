@@ -163,9 +163,9 @@ function onItemDone(id, outputPath) {
       <span class="chip chip-done">✓ Done</span>
       <button class="qi-file-link" id="${id}-outlink" onclick="openOutputFile('${id}')" title="${esc(outputPath)}">${esc(name)}</button>
       <button class="qi-rename-btn" onclick="renameFile('${id}')" title="Rename output file">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-          <path d="M17 3a2.83 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+        <svg width="45" height="45" viewBox="0 0 45 45" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M40.7323 17.0752L42.3523 15.4574C45.8825 11.9271 45.8825 6.18039 42.3523 2.64776C38.8218 -0.882587 33.073 -0.882587 29.5425 2.64776L27.9247 4.26781L40.7323 17.0752ZM24.7405 7.44266L5.46172 26.727L18.2712 39.533L37.5502 20.2485L24.7405 7.44266ZM2.79627 44.9265L14.3976 42.0285L2.9673 30.598L0.0669492 42.1995C-0.124301 42.9645 0.100699 43.7767 0.658724 44.3347C1.21672 44.8927 2.029 45.1155 2.79627 44.9265Z" fill="white" fill-opacity="0.6"/>
+</svg>
       </button>`;
   }
   document

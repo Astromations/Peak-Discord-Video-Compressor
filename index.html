@@ -143,7 +143,20 @@
             <div class="settings-header">
               <span class="section-label">Settings</span>
               <button class="reset-btn" onclick="resetSettings()">
-                ↺ Reset defaults
+                <svg
+                  width="50"
+                  height="50"
+                  viewBox="0 0 50 50"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M25 0C11.2125 0 0 11.2125 0 25H8.33333C8.33333 15.8083 15.8083 8.33332 25 8.33332C34.1917 8.33332 41.6668 15.8083 41.6668 25C41.6668 34.1917 34.1917 41.6667 25 41.6667C20.5082 41.6667 16.3958 39.8333 13.2875 36.7168L20.8332 29.1667H0V50L7.3375 42.6625C11.9958 47.35 18.2542 50 25 50C38.7875 50 50 38.7875 50 25C50 11.2167 38.7875 0 25 0Z"
+                    fill="white"
+                    fill-opacity="0.6"
+                  />
+                </svg>
+                <span>Reset defaults</span>
               </button>
             </div>
 
@@ -354,10 +367,6 @@
                 class="output-dir-toggle has-tooltip"
                 onclick="toggleOutputDir()"
               >
-                <span class="tooltip"
-                  >Save output files to a fixed folder<br />instead of next to
-                  the source file.</span
-                >
                 <div class="toggle-info">
                   <strong>Custom Output Folder</strong>
                   <small id="outputDirSubtitle"
@@ -506,11 +515,16 @@
         <!-- Transport -->
         <div class="trim-transport">
           <button class="trim-ctrl-btn" onclick="skipVideo(-5)" title="−5s">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <svg
+              width="46"
+              height="46"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
               <path
-                d="M11 17l-7-5 7-5v10zM18 17l-7-5 7-5v10z"
-                fill="currentColor"
-              />
+                d="M10.134 17.798A1.2 1.2 0 0 0 12 16.8v-3.358l6.534 4.356A1.2 1.2 0 0 0 20.4 16.8V7.2a1.2 1.2 0 0 0-1.866-.998L12 10.558V7.2a1.2 1.2 0 0 0-1.866-.998l-7.2 4.8a1.2 1.2 0 0 0 0 1.996l7.2 4.8Z"
+              ></path>
             </svg>
           </button>
           <button
@@ -520,20 +534,30 @@
           >
             <svg
               id="trimPlayIcon"
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
+              width="38"
+              height="43"
+              viewBox="0 0 38 43"
               fill="white"
+              xmlns="http://www.w3.org/2000/svg"
             >
-              <path d="M5 3l14 9-14 9V3z" />
+              <path
+                d="M7.5351 0.697925C4.20193 -1.26277 0 1.14049 0 5.00759V37.5235C0 41.3905 4.20193 43.7938 7.5351 41.8331L35.1737 25.5751C38.46 23.6419 38.46 18.8891 35.1737 16.9558L7.5351 0.697925Z"
+                fill="white"
+                fill-opacity="0.6"
+              />
             </svg>
           </button>
           <button class="trim-ctrl-btn" onclick="skipVideo(5)" title="+5s">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <svg
+              width="46"
+              height="46"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
               <path
-                d="M13 17l7-5-7-5v10zM6 17l7-5-7-5v10z"
-                fill="currentColor"
-              />
+                d="M5.466 6.202A1.2 1.2 0 0 0 3.6 7.2v9.6a1.2 1.2 0 0 0 1.866.998L12 13.442V16.8a1.2 1.2 0 0 0 1.866.998l7.2-4.8a1.2 1.2 0 0 0 0-1.996l-7.2-4.8A1.2 1.2 0 0 0 12 7.2v3.358L5.466 6.202Z"
+              ></path>
             </svg>
           </button>
           <div class="trim-time-group">
@@ -548,13 +572,12 @@
               height="14"
               viewBox="0 0 24 24"
               fill="none"
+              xmlns="http://www.w3.org/2000/svg"
             >
               <path
-                d="M11 5L6 9H2v6h4l5 4V5zM19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
+                d="M23.4575 0.188727C22.5225 -0.194981 21.4475 0.0168055 20.7325 0.729406L10 12.4549H2.5C1.125 12.4549 0 13.5786 0 14.9465V29.8961C0 31.2665 1.125 32.3877 2.5 32.3877H10L20.7325 44.1182C21.4475 44.8308 22.5225 45.0451 23.4575 44.6589C24.3925 44.2727 25 43.3633 25 42.3541V2.48848C25 1.48436 24.3925 0.569943 23.4575 0.188727ZM30 4.97987V9.96309C36.8925 9.96309 42.5 15.5543 42.5 22.4213C42.5 29.2906 36.8925 34.8793 30 34.8793V39.8625C39.65 39.8625 47.5 32.0414 47.5 22.4213C47.5 12.806 39.65 4.97987 30 4.97987ZM30 14.9463C34.135 14.9463 37.5 18.3026 37.5 22.4213C37.5 26.5449 34.135 29.8961 30 29.8961V24.9129C31.3775 24.9129 32.5 23.7941 32.5 22.4213C32.5 21.0484 31.3775 19.9297 30 19.9297V14.9463Z"
+                fill="white"
+                fill-opacity="0.6"
               />
             </svg>
             <input
@@ -712,7 +735,19 @@
             onclick="closePreviewModal()"
             title="Close"
           >
-            ✕
+            <svg
+              width="40"
+              height="40"
+              viewBox="0 0 40 40"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M36 0L20 16L4 0L0 4L16 20L0 36L4 40L20 24L36 40L40 36L24 20L40 4L36 0Z"
+                fill="white"
+                fill-opacity="0.6"
+              />
+            </svg>
           </button>
         </div>
 
@@ -731,130 +766,174 @@
           </button>
 
           <div class="preview-controls">
-            <input
-              type="range"
-              id="previewSeek"
-              class="preview-seek"
-              min="0"
-              max="100"
-              value="0"
-              step="0.1"
-            />
             <div class="preview-controls-row">
-              <button
-                class="preview-icon-btn"
-                id="previewPrevBtn"
-                onclick="previewPrevClip()"
-                title="Previous clip"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M11 17l-7-5 7-5v10zM18 17l-7-5 7-5v10z"
-                    fill="currentColor"
-                  />
-                </svg>
-              </button>
-
-              <button
-                class="preview-icon-btn"
-                id="previewPlayBtn"
-                onclick="togglePreviewPlay()"
-                title="Play / pause"
-              >
-                <svg
-                  id="previewPlayIcon"
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="white"
-                >
-                  <path d="M5 3l14 9-14 9V3z" />
-                </svg>
-              </button>
-
-              <button
-                class="preview-icon-btn"
-                id="previewNextBtn"
-                onclick="previewNextClip()"
-                title="Next clip"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M13 17l7-5-7-5v10zM6 17l7-5-7-5v10z"
-                    fill="currentColor"
-                  />
-                </svg>
-              </button>
-
-              <span class="preview-time" id="previewTimeText">0:00 / 0:00</span>
-
-              <div class="preview-volume-wrap">
+              <div class="preview-controls-left">
                 <button
                   class="preview-icon-btn"
-                  id="previewMuteBtn"
-                  onclick="togglePreviewMute()"
-                  title="Mute / unmute"
+                  id="previewPrevBtn"
+                  onclick="previewPrevClip()"
+                  title="Previous clip"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <svg
+                    width="46"
+                    height="46"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
                     <path
-                      d="M11 5L6 9H2v6h4l5 4V5zM19 9l-6 6"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
+                      d="M10.134 17.798A1.2 1.2 0 0 0 12 16.8v-3.358l6.534 4.356A1.2 1.2 0 0 0 20.4 16.8V7.2a1.2 1.2 0 0 0-1.866-.998L12 10.558V7.2a1.2 1.2 0 0 0-1.866-.998l-7.2 4.8a1.2 1.2 0 0 0 0 1.996l7.2 4.8Z"
+                    ></path>
+                  </svg>
+                </button>
+
+                <button
+                  class="preview-icon-btn"
+                  id="previewPlayBtn"
+                  onclick="togglePreviewPlay()"
+                  title="Play / pause"
+                >
+                  <svg
+                    id="previewPlayIcon"
+                    width="38"
+                    height="43"
+                    viewBox="0 0 38 43"
+                    fill="white"
+                  >
+                    <path
+                      d="M7.5351 0.697925C4.20193 -1.26277 0 1.14049 0 5.00759V37.5235C0 41.3905 4.20193 43.7938 7.5351 41.8331L35.1737 25.5751C38.46 23.6419 38.46 18.8891 35.1737 16.9558L7.5351 0.697925Z"
+                      fill="white"
+                      fill-opacity="0.6"
                     />
                   </svg>
                 </button>
+
+                <button
+                  class="preview-icon-btn"
+                  id="previewNextBtn"
+                  onclick="previewNextClip()"
+                  title="Next clip"
+                >
+                  <svg
+                    width="46"
+                    height="46"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M5.466 6.202A1.2 1.2 0 0 0 3.6 7.2v9.6a1.2 1.2 0 0 0 1.866.998L12 13.442V16.8a1.2 1.2 0 0 0 1.866.998l7.2-4.8a1.2 1.2 0 0 0 0-1.996l-7.2-4.8A1.2 1.2 0 0 0 12 7.2v3.358L5.466 6.202Z"
+                    ></path>
+                  </svg>
+                </button>
+
+                <span class="preview-time" id="previewTimeText"
+                  >0:00 / 0:00</span
+                >
+              </div>
+
+              <div class="preview-progress-wrap">
                 <input
                   type="range"
-                  id="previewVolume"
-                  class="preview-volume"
+                  id="previewSeek"
+                  class="preview-seek"
                   min="0"
-                  max="1"
-                  value="1"
-                  step="0.05"
+                  max="100"
+                  value="0"
+                  step="0.1"
                 />
               </div>
 
-              <div class="preview-spacer"></div>
+              <div class="preview-controls-right">
+                <div class="preview-volume-wrap">
+                  <button
+                    class="preview-icon-btn"
+                    id="previewMuteBtn"
+                    onclick="togglePreviewMute()"
+                    title="Mute / unmute"
+                  >
+                    <svg
+                      width="46"
+                      height="46"
+                      fill="currentColor"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M11.26 3.691A1.2 1.2 0 0 1 12 4.8v14.4a1.2 1.2 0 0 1-2.048.848L5.503 15.6H2.4a1.2 1.2 0 0 1-1.2-1.2V9.6a1.2 1.2 0 0 1 1.2-1.2h3.103l4.449-4.448a1.2 1.2 0 0 1 1.308-.26Zm3.492 5.06a1.2 1.2 0 0 1 1.696 0L18 10.304l1.552-1.551a1.2 1.2 0 1 1 1.696 1.696L19.697 12l1.551 1.552a1.2 1.2 0 0 1-1.696 1.696L18 13.697l-1.552 1.551a1.2 1.2 0 0 1-1.696-1.696L16.303 12l-1.551-1.552a1.2 1.2 0 0 1 0-1.696Z"
+                        clip-rule="evenodd"
+                      ></path>
+                    </svg>
+                  </button>
+                  <input
+                    type="range"
+                    id="previewVolume"
+                    class="preview-volume"
+                    min="0"
+                    max="1"
+                    value="1"
+                    step="0.05"
+                  />
+                </div>
 
-              <button
-                class="preview-icon-btn"
-                onclick="openPreviewInExternal()"
-                title="Open in default player"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M14 3h7v7M10 14L21 3M21 14v7h-7M3 10V3h7M3 21h7v-7"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-              </button>
-              <button
-                class="preview-icon-btn"
-                id="previewFullscreenBtn"
-                onclick="togglePreviewFullscreen()"
-                title="Fullscreen"
-              >
-                <svg
-                  id="previewFullscreenIcon"
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
+                <button
+                  class="preview-icon-btn"
+                  onclick="openPreviewInExternal()"
+                  title="Open in default player"
                 >
-                  <path
-                    d="M8 3H3v5M16 3h5v5M21 16v5h-5M8 21H3v-5"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-              </button>
+                  <svg
+                    width="46"
+                    height="46"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M13.2 3.6a1.2 1.2 0 1 0 0 2.4h3.103l-7.551 7.552a1.2 1.2 0 1 0 1.696 1.696L18 7.697V10.8a1.2 1.2 0 1 0 2.4 0v-6a1.2 1.2 0 0 0-1.2-1.2h-6Z"
+                    ></path>
+                    <path
+                      d="M6 6a2.4 2.4 0 0 0-2.4 2.4V18A2.4 2.4 0 0 0 6 20.4h9.6A2.4 2.4 0 0 0 18 18v-3.6a1.2 1.2 0 1 0-2.4 0V18H6V8.4h3.6a1.2 1.2 0 1 0 0-2.4H6Z"
+                    ></path>
+                  </svg>
+                </button>
+                <button
+                  class="preview-icon-btn"
+                  id="previewFullscreenBtn"
+                  onclick="togglePreviewFullscreen()"
+                  title="Fullscreen"
+                >
+                  <svg
+                    id="previewFullscreenIcon"
+                    width="45"
+                    height="46"
+                    viewBox="0 0 45 46"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M40.0048 0H27.5048V5.0339H40.0048V17.6186H45.0047V5.0339C45.0047 3.69883 44.478 2.41843 43.5403 1.47439C42.6026 0.530355 41.3308 0 40.0048 0Z"
+                      fill="white"
+                      fill-opacity="0.6"
+                    />
+                    <path
+                      d="M40.0048 40.2713H27.5048V45.3052H40.0048C41.3308 45.3052 42.6026 44.7749 43.5403 43.8308C44.478 42.8868 45.0047 41.6064 45.0047 40.2713V27.6866H40.0048V40.2713Z"
+                      fill="white"
+                      fill-opacity="0.6"
+                    />
+                    <path
+                      d="M0 5.0339V17.6186H5V5.0339H17.5V0H5C3.67392 0 2.40215 0.530355 1.46447 1.47439C0.526784 2.41843 0 3.69883 0 5.0339Z"
+                      fill="white"
+                      fill-opacity="0.6"
+                    />
+                    <path
+                      d="M5 27.6866H0V40.2713C0 41.6064 0.526784 42.8868 1.46447 43.8308C2.40215 44.7749 3.67392 45.3052 5 45.3052H17.5V40.2713H5V27.6866Z"
+                      fill="white"
+                      fill-opacity="0.6"
+                    />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
         </div>
