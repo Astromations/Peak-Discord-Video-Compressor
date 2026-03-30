@@ -36,11 +36,10 @@ body {
   height: 100%;
   font-family:
     "gg sans", "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
-  font-size: 14px;
+  font-size: 16px;
   background: var(--bg-base);
   color: var(--text-normal);
-  /* Custom */
-  /* -webkit-font-smoothing: antialiased; */
+  -webkit-font-smoothing: antialiased;
   user-select: none;
   overflow: hidden;
 }

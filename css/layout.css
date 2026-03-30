@@ -64,17 +64,17 @@ body.is-resizing * {
   }
 
   .panel-right {
-    width: 260px;
-    flex: 0 0 calc(var(--right-panel-width) - 30px);
+    width: 360px;
+    flex: 0 0 calc(var(--right-panel-width, 360px) - 30px);
     padding-left: 14px;
   }
 
   .app-body.resized .panel-left {
-    flex: 0 0 var(--left-panel-width);
+    flex: 0 0 var(--left-panel-width, 240px);
   }
 
   .app-body.resized .panel-right {
-    flex: 0 0 calc(var(--right-panel-width) - 30px);
+    flex: 0 0 calc(var(--right-panel-width, 360px) - 30px);
   }
 
   .panel-divider {
