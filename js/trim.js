@@ -114,8 +114,15 @@ function updatePlayBtn() {
   const playing = !trimVideo.paused;
   const icon = document.getElementById("trimPlayIcon");
   icon.innerHTML = playing
-    ? '<rect x="6" y="4" width="4" height="16" rx="1" fill="white"/><rect x="14" y="4" width="4" height="16" rx="1" fill="white"/>'
-    : '<path d="M5 3l14 9-14 9V3z" fill="white"/>';
+    ? `<svg width="30" height="36" viewBox="0 0 30 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M0 35.2334H10V0H0V35.2334ZM20 0V35.2334H30V0H20Z" fill="white" fill-opacity="0.6"/>
+</svg>
+`
+    : `
+<svg width="38" height="43" viewBox="0 0 38 43" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M7.5351 0.697925C4.20193 -1.26277 0 1.14049 0 5.00759V37.5235C0 41.3905 4.20193 43.7938 7.5351 41.8331L35.1737 25.5751C38.46 23.6419 38.46 18.8891 35.1737 16.9558L7.5351 0.697925Z" fill="white" fill-opacity="0.6"/>
+</svg>
+`;
   showPlayOverlay(playing ? "pause" : "play");
 }
 
