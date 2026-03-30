@@ -219,6 +219,37 @@
   cursor: pointer;
 }
 
+.trim-vol-wrap input {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  height: 5px;
+  background: var(--bg-secondary);
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+
+.trim-vol-wrap input[type="range"].styled {
+  background: linear-gradient(
+    to right,
+    var(--brand) var(--val, 0%),
+    var(--bg-secondary) var(--val, 0%)
+  );
+}
+.trim-vol-wrap input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 13px;
+  height: 13px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  transition: transform 0.1s;
+}
+.trim-vol-wrap input[type="range"]:hover::-webkit-slider-thumb {
+  transform: scale(1.2);
+}
+
 /* ── Timeline ── */
 
 .trim-timeline-section {
