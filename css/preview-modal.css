@@ -7,6 +7,7 @@
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(3px);
   z-index: 520;
   align-items: center;
   justify-content: center;

@@ -152,6 +152,13 @@ function openPreviewInExternal() {
   pywebview.api.open_in_media_player(item.path);
 }
 
+async function openPreviewTrimModal() {
+  if (!previewItemId || typeof openTrimModal !== "function") return;
+  const targetId = previewItemId;
+  await closePreviewModal();
+  await openTrimModal(targetId);
+}
+
 function _setPreviewPlayIcon(playing) {
   previewPlayIcon.innerHTML = playing
     ? '<path d="M0 35.2334H10V0H0V35.2334ZM20 0V35.2334H30V0H20Z" fill="white" fill-opacity="0.6"/>'

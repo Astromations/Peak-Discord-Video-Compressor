@@ -11,7 +11,7 @@
   z-index: 500;
   align-items: center;
   justify-content: center;
-  padding: 18px;
+  padding: 16px;
 }
 .trim-overlay.open {
   display: flex;
@@ -22,13 +22,12 @@
   border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 20px 48px rgba(0, 0, 0, 0.56);
-  width: 100%;
-  max-width: 760px;
+  width: min(980px, 100%);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
   overflow-x: hidden;
-  max-height: calc(100vh - 36px);
+  max-height: calc(100vh - 32px);
   position: relative;
 }
 
