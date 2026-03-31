@@ -1,0 +1,106 @@
+/* ════════════════════════════════════════
+   WINDOW TITLEBAR
+   ════════════════════════════════════════ */
+
+:root {
+  --window-titlebar-height: 32px;
+  --window-ctrl-width: 124px;
+}
+.titlebar {
+}
+/* Buttons inside must opt back out */
+
+.window-titlebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--window-titlebar-height);
+  background: #1e1f22;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: grid;
+  grid-template-columns: var(--window-ctrl-width) 1fr var(--window-ctrl-width);
+  align-items: stretch;
+  z-index: 420;
+  -webkit-app-region: drag;
+}
+
+.window-titlebar-left {
+  min-width: 0;
+}
+
+.window-titlebar-center {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #f2f3f5;
+  pointer-events: none;
+  padding-bottom: 8px;
+}
+
+.window-titlebar-icon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  opacity: 0.95;
+  flex-shrink: 0;
+}
+
+.window-titlebar-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #f2f3f5;
+}
+
+.window-titlebar-controls {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  width: var(--window-ctrl-width);
+  margin-left: auto;
+  -webkit-app-region: no-drag;
+}
+
+.window-ctrl-btn {
+  border: none;
+  background: transparent;
+  color: #b5bac1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 0.12s,
+    color 0.12s;
+}
+
+.window-ctrl-btn:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #ffffff;
+}
+
+.window-ctrl-btn.close:hover {
+  background: #da373c;
+  color: #ffffff;
+}
+
+.window-ctrl-btn:focus-visible {
+  outline: 2px solid rgba(88, 101, 242, 0.5);
+  outline-offset: -2px;
+}
+
+@media (max-width: 620px) {
+  :root {
+    --window-titlebar-height: 40px;
+    --window-ctrl-width: 108px;
+  }
+
+  .window-titlebar-title {
+    font-size: 12px;
+  }
+}

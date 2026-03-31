@@ -8,6 +8,100 @@
     <link rel="stylesheet" href="Font/style.css" />
   </head>
   <body>
+    <div class="window-titlebar" id="windowTitlebar" data-pywebview-drag-region>
+      <div
+        class="window-titlebar-left"
+        aria-hidden="true"
+        data-pywebview-drag-region
+      ></div>
+
+      <div
+        class="window-titlebar-center"
+        aria-label="Peak window title"
+        data-pywebview-drag-region
+      >
+        <img src="css/peak.png" alt="" class="window-titlebar-icon" />
+        <span class="window-titlebar-title"
+          >Peak - Discord Video Compressor</span
+        >
+      </div>
+
+      <div
+        class="window-titlebar-controls"
+        role="group"
+        aria-label="Window controls"
+      >
+        <button
+          class="window-ctrl-btn"
+          id="winMinBtn"
+          type="button"
+          title="Minimize"
+          aria-label="Minimize window"
+        >
+          <svg
+            width="10"
+            height="10"
+            viewBox="0 0 10 10"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              d="M1 5H9"
+              stroke="currentColor"
+              stroke-width="1.4"
+              stroke-linecap="round"
+            />
+          </svg>
+        </button>
+        <button
+          class="window-ctrl-btn"
+          id="winMaxBtn"
+          type="button"
+          title="Maximize or restore"
+          aria-label="Maximize or restore window"
+        >
+          <svg
+            width="10"
+            height="10"
+            viewBox="0 0 10 10"
+            fill="none"
+            aria-hidden="true"
+          >
+            <rect
+              x="1.75"
+              y="1.75"
+              width="6.5"
+              height="6.5"
+              stroke="currentColor"
+              stroke-width="1.2"
+            />
+          </svg>
+        </button>
+        <button
+          class="window-ctrl-btn close"
+          id="winCloseBtn"
+          type="button"
+          title="Close"
+          aria-label="Close window"
+        >
+          <svg
+            width="10"
+            height="10"
+            viewBox="0 0 10 10"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              d="M2 2L8 8M8 2L2 8"
+              stroke="currentColor"
+              stroke-width="1.4"
+              stroke-linecap="round"
+            />
+          </svg>
+        </button>
+      </div>
+    </div>
+
     <div class="app">
       <!-- Header -->
       <div class="header">
@@ -896,6 +990,13 @@
                       d="M6 6a2.4 2.4 0 0 0-2.4 2.4V18A2.4 2.4 0 0 0 6 20.4h9.6A2.4 2.4 0 0 0 18 18v-3.6a1.2 1.2 0 1 0-2.4 0V18H6V8.4h3.6a1.2 1.2 0 1 0 0-2.4H6Z"
                     ></path>
                   </svg>
+                </button>
+                <button
+                  class="preview-icon-btn"
+                  id="previewTrimBtn"
+                  onclick="openPreviewTrimModal()"
+                >
+                  ✂
                 </button>
                 <button
                   class="preview-icon-btn"

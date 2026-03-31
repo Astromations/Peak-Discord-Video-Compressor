@@ -19,8 +19,39 @@ let currentFormat = "mp4";
 let previewMode = "internal";
 const outputPaths = {};
 
+function bindWindowTitlebarControls() {
+  const minBtn = document.getElementById("winMinBtn");
+  const maxBtn = document.getElementById("winMaxBtn");
+  const closeBtn = document.getElementById("winCloseBtn");
+
+  if (!minBtn || !maxBtn || !closeBtn) return;
+
+  minBtn.addEventListener("click", async () => {
+    if (!window.pywebview?.api?.window_minimize) return;
+    try {
+      await window.pywebview.api.window_minimize();
+    } catch (_) {}
+  });
+
+  maxBtn.addEventListener("click", async () => {
+    if (!window.pywebview?.api?.window_toggle_maximize) return;
+    try {
+      await window.pywebview.api.window_toggle_maximize();
+    } catch (_) {}
+  });
+
+  closeBtn.addEventListener("click", async () => {
+    if (!window.pywebview?.api?.window_close) return;
+    try {
+      await window.pywebview.api.window_close();
+    } catch (_) {}
+  });
+}
+
 // ── Init ──────────────────────────────────────────────────────────
 window.addEventListener("load", async () => {
+  bindWindowTitlebarControls();
+
   initSlider("sizeSlider", "sizeVal", (v) => `${v} MB`, 1, 200);
   initSlider("audioSlider", "audioVal", (v) => `${v} kbps`, 8, 320);
   initSlider("trimVol", null, null, 0, 1);

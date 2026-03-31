@@ -11,6 +11,8 @@ import re
 import socket
 import mimetypes
 import urllib.parse
+import ctypes
+import ctypes.wintypes
 import webview
 
 try:
@@ -259,6 +261,8 @@ class Api:
 
     def __init__(self):
         self._window = None
+        self._window_fullscreen = False
+        self._window_maximized = False
         self._settings_file = get_settings_file_path()
         self._active_proc = None
         self._active_proc_lock = threading.Lock()
@@ -363,6 +367,58 @@ class Api:
                 subprocess.Popen(["open", path])
             else:
                 subprocess.Popen(["xdg-open", path])
+            return True
+        except Exception:
+            return False
+
+    def set_window_fullscreen(self, enabled):
+        """Toggle the native app window fullscreen state."""
+        try:
+            if not self._window:
+                return False
+
+            enabled = bool(enabled)
+            if self._window_fullscreen != enabled:
+                self._window.toggle_fullscreen()
+                self._window_fullscreen = enabled
+            return True
+        except Exception:
+            return False
+
+    def window_minimize(self):
+        """Minimize the native app window."""
+        try:
+            if not self._window:
+                return False
+            self._window.minimize()
+            return True
+        except Exception:
+            return False
+
+    def window_toggle_maximize(self):
+        try:
+            SW_RESTORE  = 9
+            SW_MAXIMIZE = 3
+            hwnd = ctypes.windll.user32.FindWindowW(None, "Peak - Discord Video Compressor")
+            if not hwnd:
+                return False
+            if self._window_maximized:
+                ctypes.windll.user32.ShowWindow(hwnd, SW_RESTORE)
+                self._window_maximized = False
+            else:
+                ctypes.windll.user32.ShowWindow(hwnd, SW_MAXIMIZE)
+                self._window_maximized = True
+            return self._window_maximized
+        except Exception as e:
+            print(f"[maximize error] {e}")
+            return False
+
+    def window_close(self):
+        """Close the app window."""
+        try:
+            if not self._window:
+                return False
+            self._window.destroy()
             return True
         except Exception:
             return False
@@ -625,7 +681,7 @@ class Api:
         
         if estimated_output_bits > target_bits:
             # Scale down video bitrate to fit within target, leaving room for audio & overhead
-            safety_buffer = int(target_bits * 0.08)  # Reserve 8% for overhead (was 5%)
+            safety_buffer = int(target_bits * 0.03)  # Reserve 3% for overhead (was 8%)
             available_for_video = target_bits - audio_bits - safety_buffer
             video_bitrate = max(int(available_for_video / eff_duration), 50_000)
             print(f"[BITRATE] OVERSHOOT DETECTED! Scaling down: video_bitrate={video_bitrate/1e6:.2f}Mbps")
@@ -746,7 +802,119 @@ class Api:
     def _emit_progress(self, item_id, progress, eta):
         self._window.evaluate_js(
             f"onItemProgress({json.dumps(item_id)}, {progress:.4f}, {json.dumps(eta)})")
+    
+def _apply_win11_styling(title):
+    if os.name != "nt":
+        return
+    try:
+        user32  = ctypes.windll.user32
+        dwmapi  = ctypes.windll.dwmapi
 
+        hwnd = 0
+        for _ in range(50):
+            hwnd = user32.FindWindowW(None, title)
+            if hwnd:
+                break
+            time.sleep(0.1)
+
+        if not hwnd:
+            print("[dwm] window never appeared")
+            return
+
+        print(f"[dwm] hwnd = {hwnd}")
+
+        # frameless=True gives us WS_POPUP (no titlebar, no resize)
+        # We just need to ADD WS_THICKFRAME to get resize back
+        GWL_STYLE     = -16
+        WS_THICKFRAME = 0x00040000
+
+        style = user32.GetWindowLongW(hwnd, GWL_STYLE)
+        style |= WS_THICKFRAME
+        user32.SetWindowLongW(hwnd, GWL_STYLE, style)
+
+        # -1 margins = full window as DWM frame → shadow
+        class MARGINS(ctypes.Structure):
+            _fields_ = [("cxLeftWidth",    ctypes.c_int),
+                        ("cxRightWidth",   ctypes.c_int),
+                        ("cyTopHeight",    ctypes.c_int),
+                        ("cyBottomHeight", ctypes.c_int)]
+
+        dwmapi.DwmExtendFrameIntoClientArea(hwnd, ctypes.byref(MARGINS(-1, -1, -1, -1)))
+
+        # Rounded corners (Win11 only)
+        DWMWA_WINDOW_CORNER_PREFERENCE = 33
+        dwmapi.DwmSetWindowAttribute(
+            hwnd, DWMWA_WINDOW_CORNER_PREFERENCE,
+            ctypes.byref(ctypes.c_int(2)),
+            ctypes.sizeof(ctypes.c_int)
+        )
+
+        SWP_FLAGS = 0x0001 | 0x0002 | 0x0004 | 0x0020
+        user32.SetWindowPos(hwnd, None, 0, 0, 0, 0, SWP_FLAGS)
+
+        print("[dwm] styling applied")
+    except Exception as e:
+        print(f"[dwm styling error] {e}")
+    if os.name != "nt":
+        return
+    try:
+        user32  = ctypes.windll.user32
+        dwmapi  = ctypes.windll.dwmapi
+
+        # Poll until Windows registers the window — handles slow onefile startup
+        hwnd = 0
+        for _ in range(50):          # up to 5 seconds in 100ms steps
+            hwnd = user32.FindWindowW(None, title)
+            if hwnd:
+                break
+            time.sleep(0.1)
+
+        if not hwnd:
+            print("[dwm] window never appeared")
+            return
+
+        print(f"[dwm] hwnd = {hwnd}")
+
+        GWL_STYLE     = -16
+        WS_THICKFRAME = 0x00040000
+        WS_CAPTION    = 0x00C00000
+
+        style = user32.GetWindowLongW(hwnd, GWL_STYLE)
+        style = (style & ~WS_CAPTION) | WS_THICKFRAME
+        user32.SetWindowLongW(hwnd, GWL_STYLE, style)
+
+        class MARGINS(ctypes.Structure):
+            _fields_ = [("cxLeftWidth",    ctypes.c_int),
+                        ("cxRightWidth",   ctypes.c_int),
+                        ("cyTopHeight",    ctypes.c_int),
+                        ("cyBottomHeight", ctypes.c_int)]
+
+        dwmapi.DwmExtendFrameIntoClientArea(hwnd, ctypes.byref(MARGINS(-1, -1, -1, -1)))
+
+        # After your existing DwmSetWindowAttribute calls, add:
+
+        DWMWA_CAPTION_COLOR = 35
+        # COLORREF is BGR not RGB — your background is #313338
+        caption_color = 0x00221f1e  # #313338 → BGR = 0x383331
+        dwmapi.DwmSetWindowAttribute(
+            hwnd, DWMWA_CAPTION_COLOR,
+            ctypes.byref(ctypes.c_int(caption_color)),
+            ctypes.sizeof(ctypes.c_int)
+        )
+
+        DWMWA_WINDOW_CORNER_PREFERENCE = 33
+        dwmapi.DwmSetWindowAttribute(
+            hwnd, DWMWA_WINDOW_CORNER_PREFERENCE,
+            ctypes.byref(ctypes.c_int(2)),
+            ctypes.sizeof(ctypes.c_int)
+        )
+
+        SWP_FLAGS = 0x0001 | 0x0002 | 0x0004 | 0x0020
+        user32.SetWindowPos(hwnd, None, 0, 0, 0, 0, SWP_FLAGS)
+
+        print("[dwm] styling applied")
+    except Exception as e:
+        print(f"[dwm styling error] {e}")
 
 if __name__ == "__main__":
     api = Api()
@@ -758,8 +926,28 @@ if __name__ == "__main__":
         min_size=(600, 550),
         resizable=True,
         background_color="#313338",
-        frameless=False,
-        draggable=True,          # enables pywebviewdragdrop events for file drop
+        frameless=True,
+        draggable=False         # enables pywebviewdragdrop events for file drop
     )
     api._window = window
-    webview.start(debug=False, func=lambda: window.maximize())
+
+    def _on_start():
+        if os.name == "nt":
+            SW_MAXIMIZE = 3
+            hwnd = 0
+            for _ in range(50):
+                hwnd = ctypes.windll.user32.FindWindowW(None, "Peak - Discord Video Compressor")
+                if hwnd:
+                    break
+                time.sleep(0.1)
+            if hwnd:
+                ctypes.windll.user32.ShowWindow(hwnd, SW_MAXIMIZE)
+                api._window_maximized = True
+
+def _on_shown():
+    _apply_win11_styling("Peak - Discord Video Compressor")
+
+
+window.events.shown += _on_shown
+
+webview.start(debug=True, func=_on_start)
