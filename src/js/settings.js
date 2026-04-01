@@ -42,16 +42,9 @@ function toggleOutputDir() {
 }
 
 async function pickDirectory() {
-  const ready =
-    typeof _waitForPywebview === "function" ? await _waitForPywebview() : true;
-  if (!ready) {
-    setStatus("Could not connect to file dialog — try restarting", "error");
-    return;
-  }
-
   let dir = null;
   try {
-    dir = await pywebview.api.pick_directory();
+    dir = await invoke("pick_directory");
   } catch (err) {
     setStatus("Folder picker error: " + (err.message || err), "error");
     return;
@@ -109,9 +102,7 @@ function saveSettings() {
     previewMode: previewMode,
   };
   localStorage.setItem("peakSettings", JSON.stringify(settings));
-  if (window.pywebview?.api?.save_settings) {
-    pywebview.api.save_settings(settings).catch(() => {});
-  }
+  invoke("save_settings", { settings }).catch(() => {});
 }
 
 function applySettings(settings) {
@@ -162,12 +153,10 @@ function applySettings(settings) {
 async function loadSettings() {
   let settings = null;
 
-  if (window.pywebview?.api?.load_settings) {
-    try {
-      settings = await pywebview.api.load_settings();
-    } catch (e) {
-      console.warn("Failed to load backend settings:", e);
-    }
+  try {
+    settings = await invoke("load_settings");
+  } catch (e) {
+    console.warn("Failed to load backend settings:", e);
   }
 
   if (!settings || Object.keys(settings).length === 0) {

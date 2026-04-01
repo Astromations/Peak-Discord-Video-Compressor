@@ -21,7 +21,7 @@ function cancelQueue() {
   setStatus("Cancelling current compression...", "working");
   updateCompressBtn();
   try {
-    pywebview.api.cancel_compression();
+    invoke("cancel_compression");
     console.log(
       "[cancelQueue] API call succeeded, waiting for backend callback...",
     );
@@ -96,22 +96,25 @@ function processNext() {
   setItemCompressing(next.id);
   setStatus(`Compressing: ${next.name}`, "working");
 
-  pywebview.api.compress(
-    next.id,
-    next.path,
-    parseInt(document.getElementById("sizeSlider").value),
-    parseInt(document.getElementById("audioSlider").value),
-    document.getElementById("gpuToggle").checked,
-    document.getElementById("combineAudioToggle").checked,
-    document.getElementById("twoPassToggle").checked,
-    document.getElementById("outputDirToggle").checked && customOutDir
-      ? customOutDir
-      : null,
-    currentFormat,
-    next.trimStart || "",
-    next.trimEnd || "",
-    next.enabledTracks,
-  );
+  invoke("compress", {
+    itemId: next.id,
+    filepath: next.path,
+    targetSizeMb: parseInt(document.getElementById("sizeSlider").value),
+    audioKbps: parseInt(document.getElementById("audioSlider").value),
+    useGpu: document.getElementById("gpuToggle").checked,
+    combineAudio: document.getElementById("combineAudioToggle").checked,
+    twoPass: document.getElementById("twoPassToggle").checked,
+    outputDir:
+      document.getElementById("outputDirToggle").checked && customOutDir
+        ? customOutDir
+        : null,
+    formatExt: currentFormat,
+    trimStart: next.trimStart || null,
+    trimEnd: next.trimEnd || null,
+    enabledTracks: next.enabledTracks,
+  }).catch((err) => {
+    onItemError(next.id, err?.message || String(err));
+  });
 }
 
 // ── Item state renderers ──────────────────────────────────────────
@@ -212,11 +215,11 @@ function onItemCancelled(id, msg) {
 
 function openOutputFile(id) {
   const path = outputPaths[id];
-  if (path) pywebview.api.open_file(path);
+  if (path) invoke("open_file", { filepath: path });
 }
 
 function revealSourceFile(path) {
-  if (path) pywebview.api.open_file(path);
+  if (path) invoke("open_file", { filepath: path });
 }
 
 // ── Rename dialogs ────────────────────────────────────────────────
@@ -345,7 +348,10 @@ async function renameFile(id) {
 
   const newName = newStem + ext;
   try {
-    const newPath = await pywebview.api.rename_file(oldPath, newName);
+    const newPath = await invoke("rename_file", {
+      old_path: oldPath,
+      new_name: newName,
+    });
     if (!newPath) {
       showRenameErrorDialog(
         "Could not rename file. A file with that name may already exist.",

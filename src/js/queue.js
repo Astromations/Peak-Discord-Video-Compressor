@@ -4,42 +4,15 @@
 // Queue management, file browsing, and drag-drop.
 
 // ── File browsing / drag-drop ─────────────────────────────────────
-
-// pywebview fires "pywebviewready" when its JS bridge is fully initialised.
-// We gate open_file_dialog on this event so the promise never hangs silently.
-let _pywebviewReady = false;
 let queueViewMode = "list";
 let dragSourceId = null;
 let dragHandleArmedId = null;
-window.addEventListener("pywebviewready", () => {
-  _pywebviewReady = true;
-});
-
-async function _waitForPywebview(timeoutMs = 5000) {
-  if (_pywebviewReady) return true;
-  return new Promise((resolve) => {
-    const timer = setTimeout(() => resolve(false), timeoutMs);
-    window.addEventListener(
-      "pywebviewready",
-      () => {
-        clearTimeout(timer);
-        resolve(true);
-      },
-      { once: true },
-    );
-  });
-}
 
 async function browseFiles() {
   if (isRunning) return;
-  const ready = await _waitForPywebview();
-  if (!ready) {
-    setStatus("Could not connect to file dialog — try restarting", "error");
-    return;
-  }
   let paths;
   try {
-    paths = await pywebview.api.open_file_dialog();
+    paths = await invoke("open_file_dialog");
   } catch (err) {
     setStatus("File dialog error: " + (err.message || err), "error");
     return;
@@ -56,18 +29,20 @@ dz.addEventListener("dragover", (e) => {
 });
 dz.addEventListener("dragleave", () => dz.classList.remove("hover"));
 
-// pywebview exposes a "window.pywebviewdragdrop" event on some backends that
-// carries the resolved file paths directly — this is more reliable than
-// e.dataTransfer.files which can be empty inside a webview.
-window.addEventListener("pywebviewdragdrop", async (e) => {
-  if (isRunning) return;
-  dz.classList.remove("hover");
-  const paths = e.paths || [];
-  const videoExts = /\.(mp4|mkv|mov|avi|webm)$/i;
-  for (const p of paths) {
-    if (videoExts.test(p)) addToQueue(p);
-  }
-});
+// Tauri drag-drop payload paths are already absolute filesystem paths.
+if (window.tauriEvent?.listen) {
+  window.tauriEvent
+    .listen("tauri://drag-drop", async (event) => {
+      if (isRunning) return;
+      dz.classList.remove("hover");
+      const paths = event?.payload?.paths || [];
+      const videoExts = /\.(mp4|mkv|mov|avi|webm)$/i;
+      for (const p of paths) {
+        if (videoExts.test(p)) addToQueue(p);
+      }
+    })
+    .catch(() => {});
+}
 
 dz.addEventListener("drop", async (e) => {
   e.preventDefault();
@@ -76,20 +51,17 @@ dz.addEventListener("drop", async (e) => {
 
   const files = Array.from(e.dataTransfer.files);
 
-  // If the webview gave us zero files (common on GTK/Qt backends), there is
-  // nothing we can do here — the pywebviewdragdrop handler above will have
-  // already fired with the real paths on those backends.
+  // If browser dataTransfer is empty, Tauri drag-drop listener handles paths.
   if (files.length === 0) return;
 
   for (const f of files) {
-    // f.path is a non-standard property injected by pywebview on some backends.
-    // If it's present and looks like an absolute path, use it directly.
+    // f.path can be present depending on host/runtime; prefer direct path when available.
     let fullPath = f.path && f.path !== f.name ? f.path : null;
 
     if (!fullPath) {
-      // Fall back: ask Python to search common directories for this filename.
+      // Fall back to backend path resolution by filename.
       try {
-        fullPath = await pywebview.api.resolve_dropped_path(f.name);
+        fullPath = await invoke("resolve_dropped_path", { filename: f.name });
       } catch (_) {
         fullPath = null;
       }
@@ -117,7 +89,7 @@ function addToQueue(path) {
   setQueueDragEnabled(!isRunning);
   updateCompressBtn();
 
-  pywebview.api.get_thumbnail(path).then((uri) => {
+  invoke("get_thumbnail", { filepath: path }).then((uri) => {
     const t = document.querySelector(`#${id} .qi-thumb`);
     if (t)
       t.innerHTML = uri ? `<img src="${uri}" alt="" />` : thumbPlaceholder();

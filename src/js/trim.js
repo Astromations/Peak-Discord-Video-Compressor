@@ -50,19 +50,18 @@ async function openTrimModal(id) {
 
   document.getElementById("trimOverlay").classList.add("open");
 
-  // Load via localhost HTTP server (works on all pywebview backends).
   // If the file has multiple audio tracks, mix them down to a temp file first
   // so all tracks are audible simultaneously during preview (Chromium only
   // exposes one audio stream natively from a multi-track container).
   trimPreviewTmp = null;
-  const result = await pywebview.api.get_mixed_preview_url(item.path);
+  const result = await invoke("get_mixed_preview_url", { filepath: item.path });
   trimPreviewTmp = result.tmp; // null if single-track or fallback
-  trimVideo.src = result.url;
+  trimVideo.src = result.url ? convertFileSrc(result.url) : "";
   trimVideo.load();
 
   // Fetch audio tracks if not yet loaded
   if (trimAudioTracks.length === 0) {
-    pywebview.api.get_audio_tracks(item.path).then((tracks) => {
+    invoke("get_audio_tracks", { filepath: item.path }).then((tracks) => {
       trimAudioTracks = tracks;
       item.audioTracks = tracks;
       renderAudioTracks();
@@ -272,7 +271,7 @@ function setPointToCurrent(which) {
 }
 
 // ── Audio tracks ──────────────────────────────────────────────────
-// Note: Chromium (pywebview's engine) does not implement HTMLMediaElement.audioTracks,
+// Note: Chromium does not implement HTMLMediaElement.audioTracks,
 // so per-track preview isolation is not possible. Toggles here affect export only.
 
 function renderAudioTracks() {
@@ -392,7 +391,7 @@ function closeTrimModal() {
   trimVideo.src = "";
   document.getElementById("trimOverlay").classList.remove("open");
   if (trimPreviewTmp) {
-    pywebview.api.delete_temp_file(trimPreviewTmp);
+    invoke("delete_temp_file", { tmp_path: trimPreviewTmp }).catch(() => {});
     trimPreviewTmp = null;
   }
   trimItemId = null;

@@ -34,7 +34,7 @@ async function previewQueueItem(id) {
 
   if (previewMode === "external") {
     try {
-      await pywebview.api.open_in_media_player(item.path);
+      await invoke("open_in_media_player", { filepath: item.path });
     } catch (_) {
       setStatus("Could not open default media player", "error");
     }
@@ -51,13 +51,6 @@ async function openPreviewModal(item) {
 async function _openPreviewForItem(item, autoplay) {
   if (!item) return;
 
-  const ready =
-    typeof _waitForPywebview === "function" ? await _waitForPywebview() : true;
-  if (!ready) {
-    setStatus("Could not connect to preview bridge — try restarting", "error");
-    return;
-  }
-
   previewItemId = item.id;
   previewDuration = 0;
   previewTitle.textContent = item.name;
@@ -67,16 +60,18 @@ async function _openPreviewForItem(item, autoplay) {
   _updatePreviewNavButtons();
 
   if (previewTmpPath) {
-    pywebview.api.delete_temp_file(previewTmpPath);
+    invoke("delete_temp_file", { tmp_path: previewTmpPath }).catch(() => {});
     previewTmpPath = null;
   }
 
   previewOverlay.classList.add("open");
 
   try {
-    const result = await pywebview.api.get_mixed_preview_url(item.path);
+    const result = await invoke("get_mixed_preview_url", {
+      filepath: item.path,
+    });
     previewTmpPath = result?.tmp || null;
-    previewVideo.src = result?.url || "";
+    previewVideo.src = result?.url ? convertFileSrc(result.url) : "";
     previewVideo.load();
     if (autoplay) {
       previewVideo.play().catch(() => {});
@@ -101,9 +96,8 @@ async function _exitPreviewFullscreenIfNeeded() {
 }
 
 async function _setPreviewWindowFullscreen(enabled) {
-  if (!window.pywebview?.api?.set_window_fullscreen) return false;
   try {
-    const ok = await pywebview.api.set_window_fullscreen(!!enabled);
+    const ok = await invoke("set_window_fullscreen", { enabled: !!enabled });
     if (!ok) return false;
     previewWindowFullscreen = !!enabled;
     _updateFullscreenIcon();
@@ -127,7 +121,7 @@ async function closePreviewModal() {
   previewDuration = 0;
 
   if (previewTmpPath) {
-    pywebview.api.delete_temp_file(previewTmpPath);
+    invoke("delete_temp_file", { tmp_path: previewTmpPath }).catch(() => {});
     previewTmpPath = null;
   }
 
@@ -149,7 +143,7 @@ function togglePreviewMute() {
 function openPreviewInExternal() {
   const item = _findPreviewItem(previewItemId);
   if (!item) return;
-  pywebview.api.open_in_media_player(item.path);
+  invoke("open_in_media_player", { filepath: item.path }).catch(() => {});
 }
 
 async function openPreviewTrimModal() {
@@ -218,14 +212,7 @@ function _setPreviewSeekProgress() {
 }
 
 function togglePreviewFullscreen() {
-  if (window.pywebview?.api?.set_window_fullscreen) {
-    _setPreviewWindowFullscreen(!previewWindowFullscreen);
-    return;
-  }
-
-  const fsEl = document.fullscreenElement;
-  if (!fsEl) previewPlayerShell.requestFullscreen?.();
-  else document.exitFullscreen?.();
+  _setPreviewWindowFullscreen(!previewWindowFullscreen);
 }
 
 function _updateFullscreenIcon() {

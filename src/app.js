@@ -19,6 +19,46 @@ let currentFormat = "mp4";
 let previewMode = "internal";
 const outputPaths = {};
 
+function resolveTauriBridge() {
+  const core = window.__TAURI__?.core;
+  const event = window.__TAURI__?.event;
+  const internals = window.__TAURI_INTERNALS__;
+
+  const invokeImpl =
+    core?.invoke ||
+    internals?.invoke ||
+    (async () => {
+      throw new Error("Tauri core API unavailable");
+    });
+
+  const convertImpl =
+    core?.convertFileSrc || internals?.convertFileSrc || ((path) => path);
+
+  return { invokeImpl, convertImpl, event };
+}
+
+async function invoke(cmd, args) {
+  const { invokeImpl } = resolveTauriBridge();
+  return invokeImpl(cmd, args);
+}
+
+function convertFileSrc(path) {
+  const { convertImpl } = resolveTauriBridge();
+  return convertImpl(path);
+}
+
+window.invoke = invoke;
+window.convertFileSrc = convertFileSrc;
+window.tauriEvent = {
+  listen(eventName, handler) {
+    const eventApi = resolveTauriBridge().event;
+    if (!eventApi?.listen) {
+      return Promise.reject(new Error("Tauri event API unavailable"));
+    }
+    return eventApi.listen(eventName, handler);
+  },
+};
+
 function bindWindowTitlebarControls() {
   const minBtn = document.getElementById("winMinBtn");
   const maxBtn = document.getElementById("winMaxBtn");
@@ -27,29 +67,32 @@ function bindWindowTitlebarControls() {
   if (!minBtn || !maxBtn || !closeBtn) return;
 
   minBtn.addEventListener("click", async () => {
-    if (!window.pywebview?.api?.window_minimize) return;
     try {
-      await window.pywebview.api.window_minimize();
+      await invoke("window_minimize");
     } catch (_) {}
   });
 
   maxBtn.addEventListener("click", async () => {
-    if (!window.pywebview?.api?.window_toggle_maximize) return;
     try {
-      await window.pywebview.api.window_toggle_maximize();
+      await invoke("window_toggle_maximize");
     } catch (_) {}
   });
 
   closeBtn.addEventListener("click", async () => {
-    if (!window.pywebview?.api?.window_close) return;
     try {
-      await window.pywebview.api.window_close();
+      await invoke("window_close");
     } catch (_) {}
   });
 }
 
+function openProjectUrl() {
+  invoke("open_url", {
+    url: "https://github.com/Astromations/Peak-Discord-Video-Compressor",
+  }).catch(() => {});
+}
+
 // ── Init ──────────────────────────────────────────────────────────
-window.addEventListener("load", async () => {
+document.addEventListener("DOMContentLoaded", async () => {
   bindWindowTitlebarControls();
 
   initSlider("sizeSlider", "sizeVal", (v) => `${v} MB`, 1, 200);
@@ -63,20 +106,9 @@ window.addEventListener("load", async () => {
     }
   }, 0);
 
-  // Ensure persisted settings are applied once the pywebview bridge is ready.
-  window.addEventListener(
-    "pywebviewready",
-    async () => {
-      if (typeof loadSettings === "function") {
-        await loadSettings();
-      }
-    },
-    { once: true },
-  );
-
   buildChangelog();
 
-  const ok = await pywebview.api.check_ffmpeg();
+  const ok = await invoke("check_ffmpeg");
   if (!ok) {
     document.getElementById("ffmpegWarning").classList.add("visible");
     setStatus("FFmpeg missing — can't compress without it", "error");

@@ -1,6 +1,7 @@
 .venv
 build
 dist
+target
 TODO.md
 *.spec
 *.exe

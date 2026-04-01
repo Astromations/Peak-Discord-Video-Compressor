@@ -8,17 +8,17 @@
     <link rel="stylesheet" href="Font/style.css" />
   </head>
   <body>
-    <div class="window-titlebar" id="windowTitlebar" data-pywebview-drag-region>
+    <div class="window-titlebar" id="windowTitlebar" data-tauri-drag-region>
       <div
         class="window-titlebar-left"
         aria-hidden="true"
-        data-pywebview-drag-region
+        data-tauri-drag-region
       ></div>
 
       <div
         class="window-titlebar-center"
         aria-label="Peak window title"
-        data-pywebview-drag-region
+        data-tauri-drag-region
       >
         <img src="css/peak.png" alt="" class="window-titlebar-icon" />
         <span class="window-titlebar-title"
@@ -778,11 +778,7 @@
           <div class="changelog-header-info">
             <button
               class="changelog-github-btn"
-              onclick="
-                pywebview.api.open_url(
-                  'https://github.com/Astromations/Peak-Discord-Video-Compressor',
-                )
-              "
+              onclick="openProjectUrl()"
               title="View on GitHub"
             >
               <svg

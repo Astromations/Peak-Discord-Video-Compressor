@@ -1,0 +1,16 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Default capabilities for Peak",
+  "windows": ["main"],
+  "permissions": [
+    "core:path:default",
+    "core:event:default",
+    "core:window:default",
+    "core:app:default",
+    "core:resources:default",
+    "dialog:default",
+    "dialog:allow-open",
+    "dialog:allow-save"
+  ]
+}

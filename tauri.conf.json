@@ -1,0 +1,47 @@
+{
+  "productName": "Peak",
+  "version": "1.6.0",
+  "identifier": "com.peak",
+
+  "build": {
+    "frontendDist": "./src",
+    "devUrl": null,
+    "beforeDevCommand": "",
+    "beforeBuildCommand": ""
+  },
+
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  },
+
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Peak - Discord Video Compressor",
+        "width": 900,
+        "height": 720,
+        "minWidth": 600,
+        "minHeight": 550,
+        "resizable": true,
+        "decorations": false,
+        "center": true,
+        "dragDropEnabled": true
+      }
+    ],
+    "security": {
+      "assetProtocol": {
+        "enable": true,
+        "scope": { "allow": ["**"], "deny": [] }
+      }
+    }
+  }
+}
