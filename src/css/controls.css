@@ -76,6 +76,42 @@
   transform: none;
 }
 
+/* In compact 2-column settings layout, each row has a left and right cell.
+   Anchor tooltips by column so they stay inside the app frame. */
+@container (max-width: 945px) {
+  .controls-row > :nth-child(odd) .tooltip {
+    left: 0;
+    right: auto;
+    transform: translateX(0) translateY(3px);
+  }
+
+  .controls-row > :nth-child(odd):hover .tooltip {
+    transform: translateX(0) translateY(0);
+  }
+
+  .controls-row > :nth-child(odd) .tooltip::after {
+    left: 20px;
+    right: auto;
+    transform: none;
+  }
+
+  .controls-row > :nth-child(even) .tooltip {
+    left: auto;
+    right: 0;
+    transform: translateX(0) translateY(3px);
+  }
+
+  .controls-row > :nth-child(even):hover .tooltip {
+    transform: translateX(0) translateY(0);
+  }
+
+  .controls-row > :nth-child(even) .tooltip::after {
+    left: auto;
+    right: 16px;
+    transform: none;
+  }
+}
+
 /* ── Small button ─────────────────────────────────────────────────── */
 
 .btn-sm {
