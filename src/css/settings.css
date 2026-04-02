@@ -152,7 +152,7 @@
   display: block;
 }
 .toggle-info small {
-  /* font-size: 10px; */
+  font-size: 10px;
   color: var(--text-muted);
 }
 
@@ -334,7 +334,7 @@
   color: white;
 }
 .output-dir-toggle .toggle-info small {
-  /* font-size: 10px; */
+  font-size: 10px;
   color: var(--text-muted);
 }
 .output-dir-picker {
