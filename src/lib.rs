@@ -109,6 +109,21 @@ fn emit_progress(app: &AppHandle, item_id: &str, progress: f64, eta: Option<f64>
     );
 }
 
+fn emit_native_dropped_paths(app: &AppHandle, paths: &[PathBuf]) {
+    let as_strings: Vec<String> = paths
+        .iter()
+        .map(|p| p.to_string_lossy().to_string())
+        .collect();
+    let payload = serde_json::to_string(&as_strings).unwrap_or_else(|_| "[]".to_string());
+    eval_js(
+        app,
+        &format!(
+            "if (window.handleNativeDroppedPaths) window.handleNativeDroppedPaths({});",
+            payload
+        ),
+    );
+}
+
 // ─── FFmpeg Pass Runner ───────────────────────────────────────────────────────
 
 /// Runs a single FFmpeg command, streaming progress via `progress_cb`.
@@ -1030,6 +1045,11 @@ pub fn run() {
         .manage(AppState {
             cancel_flag: Arc::new(AtomicBool::new(false)),
             active_proc: Arc::new(Mutex::new(None)),
+        })
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::DragDrop(tauri::DragDropEvent::Drop { paths, .. }) = event {
+                emit_native_dropped_paths(&window.app_handle(), paths);
+            }
         })
         .invoke_handler(tauri::generate_handler![
             // FFmpeg

@@ -23,43 +23,36 @@ async function browseFiles() {
 }
 
 const dz = document.getElementById("dropZone");
-dz.addEventListener("dragover", (e) => {
-  e.preventDefault();
-  dz.classList.add("hover");
-});
-dz.addEventListener("dragleave", () => dz.classList.remove("hover"));
+const videoExts = /\.(mp4|mkv|mov|avi|webm)$/i;
 
-// Tauri drag-drop payload paths are already absolute filesystem paths.
-if (window.tauriEvent?.listen) {
-  window.tauriEvent
-    .listen("tauri://drag-drop", async (event) => {
-      if (isRunning) return;
-      dz.classList.remove("hover");
-      const paths = event?.payload?.paths || [];
-      const videoExts = /\.(mp4|mkv|mov|avi|webm)$/i;
-      for (const p of paths) {
-        if (videoExts.test(p)) addToQueue(p);
-      }
-    })
-    .catch(() => {});
+function handleDroppedPaths(paths) {
+  if (isRunning || !Array.isArray(paths)) return;
+  for (const p of paths) {
+    if (typeof p === "string" && videoExts.test(p)) addToQueue(p);
+  }
 }
 
-dz.addEventListener("drop", async (e) => {
-  e.preventDefault();
-  dz.classList.remove("hover");
-  if (isRunning) return;
+window.handleNativeDroppedPaths = (paths) => {
+  handleDroppedPaths(paths || []);
+};
 
-  const files = Array.from(e.dataTransfer.files);
+function isExternalFileDrag(dataTransfer) {
+  if (!dataTransfer?.types) return false;
+  return Array.from(dataTransfer.types).includes("Files");
+}
 
-  // If browser dataTransfer is empty, Tauri drag-drop listener handles paths.
+async function handleDroppedDataTransfer(dataTransfer) {
+  if (isRunning || !dataTransfer) return;
+
+  const files = Array.from(dataTransfer.files || []);
+
+  // If browser dataTransfer is empty, Tauri drop listeners handle file paths.
   if (files.length === 0) return;
 
   for (const f of files) {
-    // f.path can be present depending on host/runtime; prefer direct path when available.
     let fullPath = f.path && f.path !== f.name ? f.path : null;
 
     if (!fullPath) {
-      // Fall back to backend path resolution by filename.
       try {
         fullPath = await invoke("resolve_dropped_path", { filename: f.name });
       } catch (_) {
@@ -67,8 +60,20 @@ dz.addEventListener("drop", async (e) => {
       }
     }
 
-    if (fullPath) addToQueue(fullPath);
+    if (fullPath && videoExts.test(fullPath)) addToQueue(fullPath);
   }
+}
+
+dz.addEventListener("dragover", (e) => {
+  e.preventDefault();
+  dz.classList.add("hover");
+});
+dz.addEventListener("dragleave", () => dz.classList.remove("hover"));
+
+dz.addEventListener("drop", async (e) => {
+  e.preventDefault();
+  dz.classList.remove("hover");
+  await handleDroppedDataTransfer(e.dataTransfer);
 });
 
 // ── Queue management ──────────────────────────────────────────────
@@ -305,7 +310,16 @@ document.addEventListener("mouseup", () => {
 
 const queueWrap = document.getElementById("queueWrap");
 queueWrap.addEventListener("dragover", (e) => {
-  if (isRunning || !dragSourceId) return;
+  if (isRunning) return;
+
+  if (!dragSourceId) {
+    if (isExternalFileDrag(e.dataTransfer)) {
+      e.preventDefault();
+      dz.classList.add("hover");
+    }
+    return;
+  }
+
   e.preventDefault();
 
   const hovered = getHoveredQueueItem(e.clientX, e.clientY, queueWrap);
@@ -334,10 +348,24 @@ queueWrap.addEventListener("dragover", (e) => {
 });
 
 queueWrap.addEventListener("drop", (e) => {
-  if (isRunning || !dragSourceId) return;
+  if (isRunning) return;
+
+  if (!dragSourceId) {
+    if (isExternalFileDrag(e.dataTransfer)) {
+      e.preventDefault();
+      dz.classList.remove("hover");
+      void handleDroppedDataTransfer(e.dataTransfer);
+    }
+    return;
+  }
+
   e.preventDefault();
   clearDragTargets(queueWrap);
   syncQueueOrderFromDom();
+});
+
+queueWrap.addEventListener("dragleave", () => {
+  if (!dragSourceId) dz.classList.remove("hover");
 });
 
 setQueueView("list");
