@@ -6,7 +6,6 @@
 // ── File browsing / drag-drop ─────────────────────────────────────
 let queueViewMode = "list";
 let dragSourceId = null;
-let dragHandleArmedId = null;
 
 async function browseFiles() {
   if (isRunning) return;
@@ -179,10 +178,10 @@ function renderQueueItem(id, name, path) {
   const el = document.createElement("div");
   el.className = "qi";
   el.id = id;
-  el.draggable = !isRunning;
+  el.draggable = false;
   el.innerHTML = `
     <div class="qi-main">
-      <button class="qi-drag-handle" title="Drag to reorder" aria-label="Drag to reorder" onmousedown="armQueueDrag('${id}', event)">
+      <button class="qi-drag-handle" title="Drag to reorder" aria-label="Drag to reorder" draggable="true">
         <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
           <circle cx="2" cy="2" r="1" fill="currentColor"/>
           <circle cx="9" cy="2" r="1" fill="currentColor"/>
@@ -207,6 +206,11 @@ function renderQueueItem(id, name, path) {
         </div>
       </div>
       <div class="qi-actions">
+        <button class="qi-btn rename" id="${id}-renamebtn" onclick="renameFile('${id}')" title="Rename output file" disabled>
+          <svg width="45" height="45" viewBox="0 0 45 45" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M40.7323 17.0752L42.3523 15.4574C45.8825 11.9271 45.8825 6.18039 42.3523 2.64776C38.8218 -0.882587 33.073 -0.882587 29.5425 2.64776L27.9247 4.26781L40.7323 17.0752ZM24.7405 7.44266L5.46172 26.727L18.2712 39.533L37.5502 20.2485L24.7405 7.44266ZM2.79627 44.9265L14.3976 42.0285L2.9673 30.598L0.0669492 42.1995C-0.124301 42.9645 0.100699 43.7767 0.658724 44.3347C1.21672 44.8927 2.029 45.1155 2.79627 44.9265Z" fill="white" fill-opacity="0.6"/>
+</svg>
+        </button>
         <button class="qi-btn remove" onclick="removeFromQueue('${id}')" title="Remove"><svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path d="M36 0L20 16L4 0L0 4L16 20L0 36L4 40L20 24L36 40L40 36L24 20L40 4L36 0Z" fill="white" fill-opacity="0.6"/>
 </svg>
@@ -215,8 +219,9 @@ function renderQueueItem(id, name, path) {
       </div>
     </div>`;
 
-  el.addEventListener("dragstart", (e) => {
-    if (isRunning || dragHandleArmedId !== id) {
+  const handle = el.querySelector(".qi-drag-handle");
+  const startDrag = (e) => {
+    if (isRunning) {
       e.preventDefault();
       return;
     }
@@ -224,9 +229,9 @@ function renderQueueItem(id, name, path) {
     el.classList.add("dragging");
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/plain", id);
-  });
+  };
 
-  el.addEventListener("dragend", () => {
+  const endDrag = () => {
     el.classList.remove("dragging");
     wrap.querySelectorAll(".qi.drag-target").forEach((n) => {
       n.classList.remove(
@@ -236,26 +241,45 @@ function renderQueueItem(id, name, path) {
       );
     });
     dragSourceId = null;
-    dragHandleArmedId = null;
     syncQueueOrderFromDom();
+  };
+
+  handle?.addEventListener("dragstart", startDrag);
+  handle?.addEventListener("dragend", endDrag);
+
+  el.addEventListener("dragstart", (e) => {
+    if (queueViewMode !== "grid") {
+      e.preventDefault();
+      return;
+    }
+
+    // In grid mode, only allow drag from non-interactive empty card space.
+    const interactive = e.target.closest(
+      "button, a, input, textarea, select, .qi-status-row",
+    );
+    if (interactive) {
+      e.preventDefault();
+      return;
+    }
+
+    startDrag(e);
   });
+
+  el.addEventListener("dragend", endDrag);
 
   wrap.insertBefore(el, empty);
   empty.style.display = "none";
-}
-
-function armQueueDrag(id, e) {
-  if (isRunning) return;
-  dragHandleArmedId = id;
-  if (e) e.stopPropagation();
 }
 
 function setQueueDragEnabled(enabled) {
   const wrap = document.getElementById("queueWrap");
   if (!wrap) return;
   wrap.classList.toggle("queue-locked", !enabled);
+  const isGrid = wrap.classList.contains("queue-grid");
   wrap.querySelectorAll(".qi").forEach((item) => {
-    item.draggable = enabled;
+    item.draggable = enabled && isGrid;
+    const handle = item.querySelector(".qi-drag-handle");
+    if (handle) handle.draggable = enabled && !isGrid;
   });
 }
 
@@ -269,6 +293,8 @@ function setQueueView(mode) {
   const gridBtn = document.getElementById("queueViewGridBtn");
   if (listBtn) listBtn.classList.toggle("active", mode === "list");
   if (gridBtn) gridBtn.classList.toggle("active", mode === "grid");
+
+  setQueueDragEnabled(!isRunning);
 }
 
 function syncQueueOrderFromDom() {
@@ -303,10 +329,6 @@ function clearDragTargets(wrap) {
     );
   });
 }
-
-document.addEventListener("mouseup", () => {
-  dragHandleArmedId = null;
-});
 
 const queueWrap = document.getElementById("queueWrap");
 queueWrap.addEventListener("dragover", (e) => {
