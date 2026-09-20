@@ -1,8 +1,6 @@
 /* ════════════════════════════════════════
    BASE — Variables, Reset, Body
    ════════════════════════════════════════ */
-@import url("https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&display=swap");
-
 :root {
   --bg-base: #313338;
   --bg-secondary: #2b2d31;
@@ -35,7 +33,7 @@ html,
 body {
   height: 100%;
   font-family:
-    "gg sans", "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    "Gg Sans", "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 16px;
   background: var(--bg-base);
   color: var(--text-normal);

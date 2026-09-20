@@ -34,12 +34,23 @@ fn null_device() -> &'static str {
     }
 }
 
+fn media_command(program: &str) -> Command {
+    let mut command = Command::new(program);
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+
+        command.creation_flags(0x08000000);
+    }
+    command
+}
+
 fn check_ffmpeg_available() -> bool {
     which::which("ffmpeg").is_ok() && which::which("ffprobe").is_ok()
 }
 
 fn get_media_info(filepath: &str) -> Result<Value, String> {
-    let output = Command::new("ffprobe")
+    let output = media_command("ffprobe")
         .args([
             "-v",
             "error",
@@ -123,7 +134,7 @@ fn run_pass(
     active_proc: Arc<Mutex<Option<Child>>>,
     mut progress_cb: impl FnMut(f64),
 ) -> Result<(), String> {
-    let mut child = Command::new(&cmd[0])
+    let mut child = media_command(&cmd[0])
         .args(&cmd[1..])
         .stdout(Stdio::piped())
         .stderr(Stdio::null())
@@ -246,7 +257,7 @@ fn get_thumbnail(filepath: String) -> Option<String> {
     for seek in ["00:00:01", "00:00:00"] {
         let _ = fs::remove_file(&tmp_path); // clean any leftover
 
-        let status = Command::new("ffmpeg")
+        let status = media_command("ffmpeg")
             .args([
                 "-y",
                 "-ss",
@@ -389,7 +400,7 @@ fn get_mixed_preview_url(filepath: String) -> MixedPreviewResult {
     let filter_in: String = (0..n).map(|i| format!("[0:a:{}]", i)).collect();
     let amix = format!("{}amix=inputs={}:normalize=0[aout]", filter_in, n);
 
-    let status = Command::new("ffmpeg")
+    let status = media_command("ffmpeg")
         .args([
             "-y",
             "-i",

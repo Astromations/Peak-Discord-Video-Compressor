@@ -77,6 +77,9 @@ dz.addEventListener("drop", async (e) => {
 
 // ── Queue management ──────────────────────────────────────────────
 function addToQueue(path) {
+  const normalizedPath = path.toLowerCase();
+  if (queue.some((item) => item.path.toLowerCase() === normalizedPath)) return;
+
   const id = `qi-${++idCounter}`;
   const name = path.split(/[/\\]/).pop();
   queue.push({
