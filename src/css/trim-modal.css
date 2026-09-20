@@ -152,7 +152,7 @@
   background: #232428;
 }
 .trim-transport svg {
-  width: 14px;
+  /* width: 14px; */
   height: 14px;
 }
 
@@ -204,7 +204,7 @@
 .trim-vol-wrap {
   display: flex;
   align-items: center;
-  gap: 6px;
+  /* gap: 6px; */
   margin-left: auto;
 }
 .trim-vol-icon {
@@ -534,7 +534,6 @@
   font-family: inherit;
   font-size: 12px;
   font-weight: 700;
-  text-transform: uppercase;
   letter-spacing: 0.25px;
   cursor: pointer;
   transition: background 0.12s;
